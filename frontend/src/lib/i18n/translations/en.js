@@ -442,6 +442,26 @@ const en = {
     alertBanner: {
         message: ' AI-POWERED • PROFIT-AWARE • CONSTRAINT-PROTECTED • FULLY AUDITABLE • ',
     },
+
+    // Market Dock
+    market: {
+        market: 'MARKET',
+        marketCheck: 'Market check',
+        upToLower: 'up to {percent}% lower',
+        lowerThanSource: '{percent}% lower than {source}',
+        belowSource: '{amount} below {source}',
+        sampleData: 'SAMPLE DATA',
+        liveCheckedAgo: 'LIVE · checked {time} ago',
+        demoNote: 'Demo estimates. Tap a row to search the retailer.',
+        liveNote: 'Prices from public listings',
+        searchOn: 'Search on {retailer}',
+        viewListing: 'View listing',
+        minutesAgo: '{count} min',
+        hoursAgo: '{count} hr',
+        refresh: 'Refresh',
+        close: 'Close',
+        cheaperThanMarket: '{count} cheaper than market',
+    }
 };
 
 export default en;

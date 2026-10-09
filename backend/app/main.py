@@ -37,6 +37,7 @@ _ba_path = os.path.join(os.path.dirname(__file__), "buisness anlytics")
 if _ba_path not in sys.path:
     sys.path.insert(0, _ba_path)
 from competitive_intelligence import competitive_router
+from competitive_intelligence.market_comparison import market_comparison_router
 
 
 setup_logging()
@@ -177,6 +178,7 @@ def create_app() -> FastAPI:
     app.include_router(router)
     app.include_router(analytics_router)
     app.include_router(competitive_router)
+    app.include_router(market_comparison_router)
     app.include_router(voice_router)
     app.include_router(peitho_router)
     

@@ -1,5 +1,6 @@
-const API_BASE = 'http://127.0.0.1:8001/api/v1/negotiate';
-const CHAT_DB_BASE = 'http://127.0.0.1:8001/api/v1/chat-sessions';
+const API_SERVER = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_BASE = `${API_SERVER}/api/v1/negotiate`;
+const CHAT_DB_BASE = `${API_SERVER}/api/v1/chat-sessions`;
 
 /** Default fetch timeout (15 seconds) */
 const FETCH_TIMEOUT_MS = 15000;

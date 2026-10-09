@@ -1,0 +1,566 @@
+{
+  "products": {
+    "iPhone 15 Pro": [
+      {
+        "title": "Apple iPhone 15 Pro (128 GB) - Natural Titanium",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=Apple+iPhone+15+Pro+%28128+GB%29+-+Natural+Titanium",
+        "price": 144900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Apple iPhone 15 Pro (Natural Titanium, 128 GB)",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=Apple+iPhone+15+Pro+%28Natural+Titanium%2C+128+GB%29",
+        "price": 149900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Apple iPhone 15 Pro 128GB ROM",
+        "source": "Croma",
+        "url": "https://www.croma.com/search/?q=Apple+iPhone+15+Pro+128GB+ROM",
+        "price": 142900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Apple iPhone 15 Pro 128GB Natural Titanium",
+        "source": "Reliance Digital",
+        "url": "https://www.reliancedigital.in/search?q=Apple+iPhone+15+Pro+128GB+Natural+Titanium",
+        "price": 146900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Apple iPhone 15 Pro 128GB",
+        "source": "Vijay Sales",
+        "url": "https://www.vijaysales.com/search?q=Apple+iPhone+15+Pro+128GB",
+        "price": 145900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Sony WH-1000XM5": [
+      {
+        "title": "Sony WH-1000XM5 Wireless Noise Cancelling Headphones",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=Sony+WH-1000XM5+Wireless+Noise+Cancelling+Headphones",
+        "image_url": "https://m.media-amazon.com/images/I/51aXvjzcukL._SL500_.jpg",
+        "price": 34990.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Sony WH-1000XM5 Over Ear Wireless Headphones",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=Sony+WH-1000XM5+Over+Ear+Wireless+Headphones",
+        "image_url": "https://rukminim2.flixcart.com/image/...",
+        "price": 35490.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Sony WH-1000XM5 ANC Bluetooth Headphones",
+        "source": "Croma",
+        "url": "https://www.croma.com/search/?q=Sony+WH-1000XM5+ANC+Bluetooth+Headphones",
+        "price": 34900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Sony WH-1000XM5 Over-Ear Headphones",
+        "source": "Reliance Digital",
+        "url": "https://www.reliancedigital.in/search?q=Sony+WH-1000XM5+Over-Ear+Headphones",
+        "price": 36990.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Sony WH-1000XM5",
+        "source": "Vijay Sales",
+        "url": "https://www.vijaysales.com/search?q=Sony+WH-1000XM5",
+        "price": 35990.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Samsung Galaxy S24 Ultra": [
+      {
+        "title": "Samsung Galaxy S24 Ultra 5G AI Smartphone (Titanium Gray, 12GB, 256GB Storage)",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=Samsung+Galaxy+S24+Ultra+5G+AI+Smartphone+%28Titanium+Gray%2C+12GB%2C+256GB+Storage%29",
+        "price": 139999.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "SAMSUNG Galaxy S24 Ultra 5G (Titanium Black, 256 GB)",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=SAMSUNG+Galaxy+S24+Ultra+5G+%28Titanium+Black%2C+256+GB%29",
+        "price": 138999.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Samsung Galaxy S24 Ultra 5G",
+        "source": "Croma",
+        "url": "https://www.croma.com/search/?q=Samsung+Galaxy+S24+Ultra+5G",
+        "price": 140999.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Samsung Galaxy S24 Ultra 256GB, 12GB RAM, Titanium Violet",
+        "source": "Reliance Digital",
+        "url": "https://www.reliancedigital.in/search?q=Samsung+Galaxy+S24+Ultra+256GB%2C+12GB+RAM%2C+Titanium+Violet",
+        "price": 142999.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Samsung Galaxy S24 Ultra 5G (12GB RAM, 256GB ROM)",
+        "source": "Vijay Sales",
+        "url": "https://www.vijaysales.com/search?q=Samsung+Galaxy+S24+Ultra+5G+%2812GB+RAM%2C+256GB+ROM%29",
+        "price": 141999.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Apple MacBook Air M3": [
+      {
+        "title": "Apple MacBook Air 13-inch M3 chip, 8-core CPU, 10-core GPU, 8GB, 256GB - Midnight",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=Apple+MacBook+Air+13-inch+M3+chip%2C+8-core+CPU%2C+10-core+GPU%2C+8GB%2C+256GB+-+Midnight",
+        "price": 119900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Apple MacBook Air Apple M3 - (8 GB/256 GB SSD/macOS Sonoma) 13-inch",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=Apple+MacBook+Air+Apple+M3+-+%288+GB%2F256+GB+SSD%2FmacOS+Sonoma%29+13-inch",
+        "price": 121900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Apple MacBook Air 13 inch M3 chip",
+        "source": "Croma",
+        "url": "https://www.croma.com/search/?q=Apple+MacBook+Air+13+inch+M3+chip",
+        "price": 122900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Apple MacBook Air 13 M3 Chip (8GB/256GB)",
+        "source": "Reliance Digital",
+        "url": "https://www.reliancedigital.in/search?q=Apple+MacBook+Air+13+M3+Chip+%288GB%2F256GB%29",
+        "price": 119999.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Apple MacBook Air M3, 8GB RAM, 256GB SSD",
+        "source": "Vijay Sales",
+        "url": "https://www.vijaysales.com/search?q=Apple+MacBook+Air+M3%2C+8GB+RAM%2C+256GB+SSD",
+        "price": 118999.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Nike Air Jordan 1 Retro High OG": [
+      {
+        "title": "Jordan 1 Retro High OG Men's Shoes",
+        "source": "Myntra",
+        "url": "https://www.myntra.com/Jordan+1+Retro+High+OG+Men%27s+Shoes",
+        "price": 18995.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Nike Men's Air Jordan 1 Retro High OG Sneakers",
+        "source": "Ajio",
+        "url": "https://www.ajio.com/search/?text=Nike+Men%27s+Air+Jordan+1+Retro+High+OG+Sneakers",
+        "price": 19995.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Air Jordan 1 Retro High OG",
+        "source": "VegNonVeg",
+        "url": "https://www.google.com/search?tbm=shop&q=Air+Jordan+1+Retro+High+OG",
+        "price": 17995.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Nike Air Jordan 1 Retro High OG Chicago",
+        "source": "Superkicks",
+        "url": "https://www.google.com/search?tbm=shop&q=Nike+Air+Jordan+1+Retro+High+OG+Chicago",
+        "price": 18595.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Men Air Jordan 1 Retro High OG Casual Shoes",
+        "source": "Tata CLiQ",
+        "url": "https://www.tatacliq.com/search/?searchCategory=all&text=Men+Air+Jordan+1+Retro+High+OG+Casual+Shoes",
+        "price": 19495.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Dyson V15 Detect": [
+      {
+        "title": "Dyson V15 Detect Cordless Vacuum Cleaner",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=Dyson+V15+Detect+Cordless+Vacuum+Cleaner",
+        "price": 62900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Dyson V15 Detect Absolute Cordless Stick Vacuum Cleaner",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=Dyson+V15+Detect+Absolute+Cordless+Stick+Vacuum+Cleaner",
+        "price": 64900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Dyson V15 Detect Cord-Free Vacuum Cleaner",
+        "source": "Croma",
+        "url": "https://www.croma.com/search/?q=Dyson+V15+Detect+Cord-Free+Vacuum+Cleaner",
+        "price": 63900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Dyson V15 Detect Cordless Vacuum Cleaner",
+        "source": "Reliance Digital",
+        "url": "https://www.reliancedigital.in/search?q=Dyson+V15+Detect+Cordless+Vacuum+Cleaner",
+        "price": 62990.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Dyson V15 Detect Absolute",
+        "source": "Vijay Sales",
+        "url": "https://www.vijaysales.com/search?q=Dyson+V15+Detect+Absolute",
+        "price": 65900.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Wireless Earbuds": [
+      {
+        "title": "boAt Airdopes 141 Bluetooth Truly Wireless Earbuds",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=boAt+Airdopes+141+Bluetooth+Truly+Wireless+Earbuds",
+        "price": 2999.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Noise Buds VS102 Truly Wireless Earbuds with 50H Playtime",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=Noise+Buds+VS102+Truly+Wireless+Earbuds+with+50H+Playtime",
+        "price": 3199.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Boult Audio AirBass True Wireless Earbuds with ENC",
+        "source": "Croma",
+        "url": "https://www.croma.com/search/?q=Boult+Audio+AirBass+True+Wireless+Earbuds+with+ENC",
+        "price": 3299.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Realme Buds T110 True Wireless Earbuds",
+        "source": "Reliance Digital",
+        "url": "https://www.reliancedigital.in/search?q=Realme+Buds+T110+True+Wireless+Earbuds",
+        "price": 2899.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "OnePlus Nord Buds 2 True Wireless In-Ear Earbuds",
+        "source": "Vijay Sales",
+        "url": "https://www.vijaysales.com/search?q=OnePlus+Nord+Buds+2+True+Wireless+In-Ear+Earbuds",
+        "price": 3499.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Smart LED Bulb": [
+      {
+        "title": "Philips Wiz 9W Wi-Fi Smart LED Bulb B22",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=Philips+Wiz+9W+Wi-Fi+Smart+LED+Bulb+B22",
+        "price": 1199.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Wipro 9W Smart LED Bulb with 16M Colors B22",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=Wipro+9W+Smart+LED+Bulb+with+16M+Colors+B22",
+        "price": 1249.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Syska Smart LED Bulb 9W B22 App Control",
+        "source": "Croma",
+        "url": "https://www.croma.com/search/?q=Syska+Smart+LED+Bulb+9W+B22+App+Control",
+        "price": 1149.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Havells Glamax Smart Wi-Fi 9W LED Bulb",
+        "source": "Reliance Digital",
+        "url": "https://www.reliancedigital.in/search?q=Havells+Glamax+Smart+Wi-Fi+9W+LED+Bulb",
+        "price": 1299.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Organic Coffee Beans (1kg)": [
+      {
+        "title": "Blue Tokai Coffee Roasters Roasted Whole Beans 1kg",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=Blue+Tokai+Coffee+Roasters+Roasted+Whole+Beans+1kg",
+        "price": 1699.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Third Wave Coffee Organic Arabica Roasted Beans 1kg",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=Third+Wave+Coffee+Organic+Arabica+Roasted+Beans+1kg",
+        "price": 1599.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Sleepy Owl Premium Dark Roast Organic Coffee Beans 1kg",
+        "source": "Tata CLiQ Luxury",
+        "url": "https://www.tatacliq.com/search/?searchCategory=all&text=Sleepy+Owl+Premium+Dark+Roast+Organic+Coffee+Beans+1kg",
+        "price": 1749.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Bili Hu Single Origin Organic Arabica Coffee Beans 1kg",
+        "source": "Nature's Basket",
+        "url": "https://www.google.com/search?tbm=shop&q=Bili+Hu+Single+Origin+Organic+Arabica+Coffee+Beans+1kg",
+        "price": 1650.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Fitness Band": [
+      {
+        "title": "Xiaomi Smart Band 8 Active Fitness Tracker",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=Xiaomi+Smart+Band+8+Active+Fitness+Tracker",
+        "price": 4799.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Fastrack Reflex Beat+ Fitness Band with Heart Rate Monitor",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=Fastrack+Reflex+Beat%2B+Fitness+Band+with+Heart+Rate+Monitor",
+        "price": 4699.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Garmin Vivofit 4 Activity Tracker",
+        "source": "Croma",
+        "url": "https://www.croma.com/search/?q=Garmin+Vivofit+4+Activity+Tracker",
+        "price": 5299.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Noise ColorFit Pulse Grand Smart Band",
+        "source": "Reliance Digital",
+        "url": "https://www.reliancedigital.in/search?q=Noise+ColorFit+Pulse+Grand+Smart+Band",
+        "price": 4499.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Bluetooth Speaker": [
+      {
+        "title": "boAt Stone 650 10W Portable Bluetooth Speaker",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=boAt+Stone+650+10W+Portable+Bluetooth+Speaker",
+        "price": 2599.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "JBL GO 3 Eco Portable Waterproof Bluetooth Speaker",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=JBL+GO+3+Eco+Portable+Waterproof+Bluetooth+Speaker",
+        "price": 2899.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Sony SRS-XB100 Wireless Ultra-Portable Speaker",
+        "source": "Croma",
+        "url": "https://www.croma.com/search/?q=Sony+SRS-XB100+Wireless+Ultra-Portable+Speaker",
+        "price": 3199.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Mivi Roam 2 Wireless Bluetooth Speaker 5W",
+        "source": "Vijay Sales",
+        "url": "https://www.vijaysales.com/search?q=Mivi+Roam+2+Wireless+Bluetooth+Speaker+5W",
+        "price": 2399.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Office Chair (Ergonomic)": [
+      {
+        "title": "Green Soul Jupiter Ergonomic Office Chair with Lumbar Support",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=Green+Soul+Jupiter+Ergonomic+Office+Chair+with+Lumbar+Support",
+        "price": 9499.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Wakefit High Back Ergonomic Mesh Office Chair",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=Wakefit+High+Back+Ergonomic+Mesh+Office+Chair",
+        "price": 8999.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Featherlite Helix High Back Mesh Ergonomic Chair",
+        "source": "Pepperfry",
+        "url": "https://www.pepperfry.com/site_product/search?q=Featherlite+Helix+High+Back+Mesh+Ergonomic+Chair",
+        "price": 9999.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "CELLBELL C104 High Back Boss Ergonomic Chair",
+        "source": "Urban Ladder",
+        "url": "https://www.urbanladder.com/products/search?keywords=CELLBELL+C104+High+Back+Boss+Ergonomic+Chair",
+        "price": 8799.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Premium Widget": [
+      {
+        "title": "Premium Industrial Steel Widget Pro",
+        "source": "Amazon.in",
+        "url": "https://www.amazon.in/s?k=Premium+Industrial+Steel+Widget+Pro",
+        "price": 149.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Standard Commercial Widget v2",
+        "source": "Flipkart",
+        "url": "https://www.flipkart.com/search?q=Standard+Commercial+Widget+v2",
+        "price": 139.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Heavy Duty Industrial Widget Component",
+        "source": "IndiaMART",
+        "url": "https://www.google.com/search?tbm=shop&q=Heavy+Duty+Industrial+Widget+Component",
+        "price": 129.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Basic Plan": [
+      {
+        "title": "Starter SaaS Essential Monthly Tier",
+        "source": "TechDirect",
+        "url": "https://www.google.com/search?tbm=shop&q=Starter+SaaS+Essential+Monthly+Tier",
+        "price": 79.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Standard Monthly Entry Plan",
+        "source": "CloudHub",
+        "url": "https://www.google.com/search?tbm=shop&q=Standard+Monthly+Entry+Plan",
+        "price": 69.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Cloud Storage Subscription": [
+      {
+        "title": "Google One 200GB Cloud Storage Plan",
+        "source": "Google Store",
+        "url": "https://www.google.com/search?tbm=shop&q=Google+One+200GB+Cloud+Storage+Plan",
+        "price": 420.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Microsoft 365 Basic 100GB Cloud Storage",
+        "source": "Microsoft",
+        "url": "https://www.google.com/search?tbm=shop&q=Microsoft+365+Basic+100GB+Cloud+Storage",
+        "price": 389.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Dropbox Plus 100GB Backup Plan",
+        "source": "Dropbox",
+        "url": "https://www.google.com/search?tbm=shop&q=Dropbox+Plus+100GB+Backup+Plan",
+        "price": 499.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ],
+    "Online Course Access": [
+      {
+        "title": "Coursera Professional Certificate Monthly Specialization",
+        "source": "Coursera",
+        "url": "https://www.coursera.org/search?query=Coursera+Professional+Certificate+Monthly+Specialization",
+        "price": 1699.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "Udemy Complete Masterclass Lifetime Enrollment",
+        "source": "Udemy",
+        "url": "https://www.udemy.com/courses/search/?q=Udemy+Complete+Masterclass+Lifetime+Enrollment",
+        "price": 1499.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      },
+      {
+        "title": "edX Verified Executive Track Course Access",
+        "source": "edX",
+        "url": "https://www.edx.org/search?q=edX+Verified+Executive+Track+Course+Access",
+        "price": 1999.0,
+        "currency": "INR",
+        "listing_kind": "search"
+      }
+    ]
+  }
+}

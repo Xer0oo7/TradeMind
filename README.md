@@ -393,6 +393,9 @@ Create a MySQL database named `trademind` and ensure the backend can connect. Ta
 | `MYSQL_DB` | Database name | `trademind` |
 | `OPENROUTER_API_KEY` | OpenRouter API key for LLM access | `sk-or-...` |
 | `JWT_SECRET` | Secret key for JWT token signing | `your-secret-key` |
+| `SERP_API_KEY` | SerpAPI key for live Google Shopping market listings | `serp_api_...` |
+| `MARKET_SOURCES` | Comma-separated price sources (`serp`, `html`, `seeded`) | `seeded` |
+| `COMPARISON_MODE` | Market comparison mode (keeps items >= 1.02x our price) | `we_are_cheaper` |
 
 ### Frontend (`frontend/.env`)
 
@@ -434,6 +437,7 @@ Create a MySQL database named `trademind` and ensure the backend can connect. Ta
 | `PUT` | `/api/v1/products/{id}` | Update product | JWT / API Key |
 | `DELETE` | `/api/v1/products/{id}` | Delete product | JWT / API Key |
 | `POST` | `/api/v1/products/import` | Bulk CSV import | JWT / API Key |
+| `GET` | `/api/v1/products/{id}/market-comparison` | Get higher-priced market competitor bubbles | JWT / API Key |
 
 ### Chat Sessions
 

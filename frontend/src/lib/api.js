@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8000';
 
 // ============================================================
@@ -357,6 +357,54 @@ export async function sendTestEmail(toEmail = null) {
   if (!response.ok) {
     const err = await response.json().catch(() => ({ detail: 'Failed to send test email' }));
     throw new Error(err.detail || 'Failed to send test email');
+  }
+  return response.json();
+}
+
+export async function getMarketComparison(
+  productId = 'TRADE-001',
+  limit = 5,
+  productName = null,
+  ourPrice = null,
+  currency = null,
+  forceRefresh = false,
+  signal = null
+) {
+  const token = getAuthToken();
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const pid = productId || 'TRADE-001';
+  let url = `${API_URL}/api/v1/products/${encodeURIComponent(pid)}/market-comparison?limit=${limit}`;
+  if (productName) {
+    url += `&product_name=${encodeURIComponent(productName)}`;
+  }
+  if (ourPrice != null && ourPrice > 0) {
+    url += `&our_price=${encodeURIComponent(ourPrice)}`;
+  }
+  if (currency) {
+    url += `&currency=${encodeURIComponent(currency)}`;
+  }
+  if (forceRefresh) {
+    url += `&force_refresh=true`;
+  }
+  let response;
+  try {
+    response = await fetch(url, { headers, signal });
+  } catch (err) {
+    // If localhost failed (e.g. network/IPv6 mismatch), try 127.0.0.1
+    const altUrl = url.replace('localhost:8000', '127.0.0.1:8000');
+    if (altUrl !== url) {
+      response = await fetch(altUrl, { headers, signal });
+    } else {
+      throw err;
+    }
+  }
+  if (!response.ok) {
+    // Stale or expired token? Retry unauthenticated as demo route allows public fallback
+    if (response.status === 401 && token) {
+      const retryRes = await fetch(url, { headers: {}, signal });
+      if (retryRes.ok) return retryRes.json();
+    }
+    throw new Error(`Failed to fetch market comparison (${response.status})`);
   }
   return response.json();
 }
