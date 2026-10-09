@@ -237,6 +237,11 @@ def _parse_number_chain(words: List[str]) -> Optional[int]:
     if not words:
         return None
 
+    # Disambiguation: Isolated English verb 'do' must never be parsed as number 2.
+    # Compound numbers like 'do lakh', 'do hazar', or 'do sau' are preserved.
+    if words == ["do"]:
+        return None
+
     total = 0
     current = 0
 

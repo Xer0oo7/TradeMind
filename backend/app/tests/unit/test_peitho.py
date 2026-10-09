@@ -547,3 +547,46 @@ def test_vad_merge_guard_combines_unpunctuated_fragments():
         ws.send_json({"type": "end_call"})
 
 
+def test_non_price_numbers_ignored():
+    """Verify that temporal, ordinal, and filler numbers are NOT parsed as prices."""
+    # Durations should not be price offers
+    ext1 = AdvisoryEngine.extract_intent_from_text("Wait 3 minutes please", base_price=500.0, current_counter=500.0)
+    assert ext1["unit_price_offered"] is None
+    assert ext1["intent"] == "conversational"
+
+    # Testing filler digits should not be price offers
+    ext2 = AdvisoryEngine.extract_intent_from_text("Testing 1, 2, 3 audio check", base_price=500.0, current_counter=500.0)
+    assert ext2["unit_price_offered"] is None
+
+    # Counts/questions should not be price offers
+    ext3 = AdvisoryEngine.extract_intent_from_text("I have 4 questions regarding warranty", base_price=500.0, current_counter=500.0)
+    assert ext3["unit_price_offered"] is None
+
+    # Sentence with duration AND real price: duration must be ignored, real price extracted
+    ext4 = AdvisoryEngine.extract_intent_from_text("Can we talk in 5 minutes about $400?", base_price=500.0, current_counter=500.0)
+    assert ext4["unit_price_offered"] == 400.0
+    assert ext4["intent"] == "offer"
+
+    # Genuine offer question with standalone number should work
+    ext5 = AdvisoryEngine.extract_intent_from_text("Can you do 450?", base_price=500.0, current_counter=500.0)
+    assert ext5["unit_price_offered"] == 450.0
+    assert ext5["intent"] == "offer"
+
+
+def test_seller_filler_does_not_mutate_counter():
+    """Verify that a seller saying filler numbers does not update counter history."""
+    master_state = create_test_state()
+    initial_counter = master_state.counter_history[-1]
+
+    # Seller says filler with digits
+    detected = AdvisoryEngine.apply_seller_line(master_state, "Let me check for 3 minutes.")
+    assert detected is None
+    assert master_state.counter_history[-1] == initial_counter
+
+    # Seller says actual counter
+    detected2 = AdvisoryEngine.apply_seller_line(master_state, "I can do $90 for you today.")
+    assert detected2 == 90.0
+    assert master_state.counter_history[-1] == 90.0
+
+
+

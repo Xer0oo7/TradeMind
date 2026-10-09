@@ -22,18 +22,41 @@ from .normalizer import normalize_transcript
 logger = structlog.get_logger(__name__)
 
 
+# ── Patterns to filter out non-price numeric expressions from price extraction ──
+NON_PRICE_PATTERNS = [
+    # Durations / time: "5 minutes", "2 mins", "30 seconds", "2 hours", "3 days", "4 weeks", "6 months", "2 years"
+    re.compile(
+        r"\b[0-9]+(?:\.[0-9]+)?\s*(?:minutes?|mins?|seconds?|secs?|hours?|hrs?|days?|weeks?|months?|years?|मिनट|घंटे|घंटा|दिन|हफ्ते|हफ्ता)\b",
+        re.IGNORECASE,
+    ),
+    # Time of day: "5 pm", "5 am", "5:00", "5 o'clock"
+    re.compile(r"\b[0-9]{1,2}(?::[0-9]{2})?\s*(?:pm|am|o'?clock)\b", re.IGNORECASE),
+    # Percentages: "10%", "10 percent"
+    re.compile(r"\b[0-9]+(?:\.[0-9]+)?\s*(?:%|percent(?:age)?|प्रतिशत)\b", re.IGNORECASE),
+    # Ordinals, steps, counts: "step 1", "round 2", "option 3", "part 1", "page 5", "version 2", "v1", "tier 3"
+    re.compile(
+        r"\b(?:step|round|option|part|page|version|v|tier|phase|item|model|choice|point|question)\s+[0-9]+\b",
+        re.IGNORECASE,
+    ),
+    # Ordinal numbers: "1st", "2nd", "3rd", "4th", "5th"
+    re.compile(r"\b[0-9]+(?:st|nd|rd|th)\b", re.IGNORECASE),
+    # Non-monetary counts: "3 questions", "2 points", "5 people", "4 times", "2 calls"
+    re.compile(
+        r"\b[0-9]+\s*(?:questions?|points?|times?|people|calls?|meetings?|chances?|options?|steps?|rounds?)\b",
+        re.IGNORECASE,
+    ),
+]
+
 # ── Regex patterns for robust price & quantity extraction from live speech ──
 PRICE_PATTERNS = [
     # "$95" or "₹95" or "$ 95.50" or "$1,200"
     re.compile(r"[\$₹]\s*([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)", re.IGNORECASE),
     # "95 dollars" or "95.50 bucks" or "95 rupees" or "95 rs" or "95 inr"
     re.compile(r"\b([0-9]+(?:\.[0-9]{1,2})?)\s*(?:dollars|dollar|bucks|usd|rupees|rupee|rs|inr|रुपये|रुपए)\b", re.IGNORECASE),
-    # "at 95" or "for 95" or "give you 95" or "offer 95" or "do 95" or "में 95"
-    re.compile(r"\b(?:at|for|offer|offering|pay|do|counter|about|give\s+you|दे\s+सकता|mein|में)\s+([0-9]+(?:\.[0-9]{1,2})?)\b", re.IGNORECASE),
+    # Explicit offer verbs or prepositions: "at 95", "for 95", "give you 95", "offer 95", "do 95", "settle at 95", "budget is 95"
+    re.compile(r"\b(?:at|for|offer|offering|pay|do|counter|about|give\s+you|settle\s+at|budget\s+(?:is|of)?|limit\s+(?:is|of)?|rate\s+(?:is|of)?|price\s+(?:is|of)?|दे\s+सकता|mein|में)\s+([0-9]+(?:\.[0-9]{1,2})?)\b", re.IGNORECASE),
     # "95 apiece" or "95 per unit" or "95 each" or "95 per piece"
     re.compile(r"\b([0-9]+(?:\.[0-9]{1,2})?)\s*(?:each|apiece|per\s+unit|a\s+unit|per\s+piece|a\s+piece)\b", re.IGNORECASE),
-    # Standalone number: e.g. "Can we do 95?" or "How about 95?"
-    re.compile(r"\b([0-9]+(?:\.[0-9]{1,2})?)\b"),
 ]
 
 QUANTITY_PATTERNS = [
@@ -97,7 +120,6 @@ class AdvisoryEngine:
         # Pre-normalize spoken numbers, Hindi/Hinglish terms, and currency
         norm_text = normalize_transcript(text) if text else ""
         text_lower = norm_text.lower().strip()
-        raw_text_lower = text.lower().strip() if text else ""
 
         extraction = {
             "quantity": current_quantity,
@@ -132,10 +154,15 @@ class AdvisoryEngine:
                 except (ValueError, IndexError):
                     pass
 
-        # Extract quantity
+        # Mask non-price numeric expressions (e.g., "5 minutes", "step 2", "10%", "3 questions")
+        clean_text = norm_text
+        for npp in NON_PRICE_PATTERNS:
+            clean_text = npp.sub(" ", clean_text)
+
+        # Extract quantity from clean text
         extracted_qty = None
         for pattern in QUANTITY_PATTERNS:
-            match = pattern.search(norm_text)
+            match = pattern.search(clean_text)
             if match:
                 try:
                     qty = int(match.group(1))
@@ -146,11 +173,14 @@ class AdvisoryEngine:
                 except (ValueError, IndexError):
                     pass
 
-        # Extract price
+        # Extract price from clean text
         detected_price = None
-        # First 4 targeted patterns (currency symbol, currency unit, preposition cue, per-unit)
-        for pattern in PRICE_PATTERNS[:4]:
-            match = pattern.search(norm_text)
+        has_explicit_currency = bool(
+            re.search(r"[\$₹]|dollars?|bucks?|usd|rupees?|rupee|rs|inr|रुपय", norm_text, re.IGNORECASE)
+        )
+
+        for pattern in PRICE_PATTERNS:
+            match = pattern.search(clean_text)
             if match:
                 try:
                     val_str = match.group(1).replace(",", "")
@@ -161,23 +191,43 @@ class AdvisoryEngine:
                 except (ValueError, IndexError):
                     pass
 
-        # If still not found, check standalone numbers in norm_text
+        # Standalone numbers: only accept if there is negotiation question framing or exact single number
         if detected_price is None:
-            all_numbers = re.findall(r"\b([0-9]+(?:\.[0-9]{1,2})?)\b", norm_text)
-            for n_str in all_numbers:
+            stripped_clean = clean_text.strip()
+            # 1. Exact single number utterance (e.g. "450?" or "450." or "450")
+            exact_match = re.fullmatch(r"^([0-9]+(?:\.[0-9]{1,2})?)\s*[\?\.]*$", stripped_clean)
+            if exact_match:
                 try:
-                    candidate = float(n_str.replace(",", ""))
-                    # Avoid picking the quantity as price if they differ
-                    if extracted_qty is not None and candidate == float(extracted_qty) and len(all_numbers) > 1:
-                        continue
-                    if candidate > 0:
-                        detected_price = candidate
-                        break
+                    cand = float(exact_match.group(1).replace(",", ""))
+                    if cand > 0:
+                        detected_price = cand
                 except ValueError:
                     pass
 
+            # 2. Conversational negotiation question cues: "Can you do 450?", "How about 450?", "What about 450?"
+            if detected_price is None:
+                cue_match = re.search(
+                    r"\b(?:can\s+(?:we|you)\s+do|how\s+about|what\s+about|could\s+(?:we|you)\s+do|would\s+you\s+take)\s+([0-9]+(?:\.[0-9]{1,2})?)\b",
+                    clean_text,
+                    re.IGNORECASE,
+                )
+                if cue_match:
+                    try:
+                        cand = float(cue_match.group(1).replace(",", ""))
+                        if cand > 0:
+                            detected_price = cand
+                    except ValueError:
+                        pass
+
+        # Sanity / plausibility check:
+        # If there is NO explicit currency symbol/word, reject numbers that are < 10% of base_price (when base_price >= 20)
+        # to prevent random digits (e.g., "3", "1", "2") from masquerading as price offers on high-value products.
+        if detected_price is not None and not has_explicit_currency:
+            if base_price >= 20.0 and detected_price < (base_price * 0.1):
+                detected_price = None
+
         if detected_price is not None:
-            # Sane bounds check: if price is over 10x base price, it might be a total
+            # Sane bounds check: if price is over 2x base price, it might be a total for quantity
             if detected_price > (base_price * 2) and extraction["quantity"] > 1:
                 extraction["total_price_offered"] = detected_price
                 extraction["unit_price_offered"] = round(detected_price / extraction["quantity"], 2)
@@ -269,7 +319,14 @@ class AdvisoryEngine:
 
         detected_price = extraction.get("unit_price_offered")
         if detected_price is not None and detected_price > 0:
-            # Cap at reasonable floor/ceiling
+            # Plausibility check for seller:
+            # A human seller wouldn't quote below 50% of cost_price without explicit currency
+            has_explicit_currency = bool(
+                re.search(r"[\$₹]|dollars?|bucks?|usd|rupees?|rupee|rs|inr|रुपय", seller_text, re.IGNORECASE)
+            )
+            if not has_explicit_currency and state.cost_price > 0 and detected_price < (state.cost_price * 0.5):
+                return None
+
             state.counter_history.append(float(detected_price))
             # Log synchronization without recording raw text (PII protection)
             logger.info(
