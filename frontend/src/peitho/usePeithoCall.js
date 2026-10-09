@@ -43,7 +43,13 @@ export function usePeithoCall() {
   const [status, setStatus] = useState('idle'); // idle | starting | active | ending | ended | error
   const [sessionId, setSessionId] = useState(null);
   const [error, setError] = useState(null);
-  const [sttProvider, setSttProvider] = useState('Typed');
+  const [sttProvider, setSttProvider] = useState('ElevenLabs');
+
+  // Per-channel live status indicators
+  const [sellerStatus, setSellerStatus] = useState('connecting'); // connecting | live | error | inactive
+  const [sellerReason, setSellerReason] = useState('Waiting for microphone...');
+  const [buyerStatus, setBuyerStatus] = useState('connecting'); // connecting | live | error | inactive
+  const [buyerReason, setBuyerReason] = useState('Waiting for Google Meet tab audio...');
   
   // Audio energies for visualizer
   const [sellerEnergy, setSellerEnergy] = useState(0);
@@ -102,10 +108,11 @@ export function usePeithoCall() {
     setBuyerEnergy(0);
   }, []);
 
-  // Set up audio downsampler for a given stream and channel
+  // Set up audio downsampler for a given stream and channel with keepalive
   const attachAudioStream = useCallback((audioCtx, stream, channel, onEnergy) => {
     const source = audioCtx.createMediaStreamSource(stream);
     const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+    let lastSendTs = Date.now();
 
     processor.onaudioprocess = (e) => {
       const ws = wsRef.current;
@@ -127,8 +134,15 @@ export function usePeithoCall() {
       const rms = Math.sqrt(sum / input.length);
       onEnergy(Math.min(1, rms * 12));
 
-      // Noise gate / silence threshold
-      if (rms < 0.004) return;
+      const now = Date.now();
+      const isQuiet = rms < 0.003;
+
+      // Noise gate: only send quiet chunks if more than 1.5 seconds have elapsed (keepalive)
+      if (isQuiet && (now - lastSendTs < 1500)) {
+        return;
+      }
+
+      lastSendTs = now;
 
       // Downsample to 16kHz PCM16
       const ratio = audioCtx.sampleRate / 16000;
@@ -136,7 +150,7 @@ export function usePeithoCall() {
       const pcm = new Int16Array(newLen);
       for (let i = 0; i < newLen; i++) {
         const idx = Math.round(i * ratio);
-        const s = Math.max(-1, Math.min(1, input[idx] || 0));
+        const s = isQuiet ? 0 : Math.max(-1, Math.min(1, input[idx] || 0));
         pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
       }
 
@@ -157,8 +171,16 @@ export function usePeithoCall() {
   const handleServerMessage = useCallback((msg) => {
     switch (msg.type) {
       case 'ready':
-        setSttProvider(msg.stt_provider || 'Active');
+        if (msg.stt_provider) setSttProvider(msg.stt_provider);
         if (msg.current_counter) setCurrentCounter(msg.current_counter);
+        break;
+
+      case 'state':
+        if (msg.stt_provider) setSttProvider(msg.stt_provider);
+        if (msg.seller_status) setSellerStatus(msg.seller_status);
+        if (msg.seller_reason) setSellerReason(msg.seller_reason);
+        if (msg.buyer_status) setBuyerStatus(msg.buyer_status);
+        if (msg.buyer_reason) setBuyerReason(msg.buyer_reason);
         break;
 
       case 'partial_transcript':
@@ -252,7 +274,11 @@ export function usePeithoCall() {
           },
         });
         sellerStreamRef.current = sellerStream;
+        setSellerStatus('live');
+        setSellerReason('Microphone active');
       } catch (err) {
+        setSellerStatus('error');
+        setSellerReason(`Mic error: ${err.message}`);
         throw new Error(`Microphone permission denied: ${err.message}`);
       }
 
@@ -261,7 +287,7 @@ export function usePeithoCall() {
       if (enableMeetAudio && navigator.mediaDevices.getDisplayMedia) {
         try {
           buyerStream = await navigator.mediaDevices.getDisplayMedia({
-            video: true, // DisplayMedia requires video constraint
+            video: true,
             audio: {
               echoCancellation: false,
               noiseSuppression: false,
@@ -270,15 +296,23 @@ export function usePeithoCall() {
           });
           buyerStreamRef.current = buyerStream;
 
-          // Check if audio track was shared
           const audioTracks = buyerStream.getAudioTracks();
           if (audioTracks.length === 0) {
+            setBuyerStatus('error');
+            setBuyerReason("No audio track! Check 'Also share tab audio' in Chrome.");
             console.warn('User did not check "Share tab audio". Tab audio will not be captured.');
+          } else {
+            setBuyerStatus('live');
+            setBuyerReason('Meet tab audio active');
           }
         } catch (err) {
+          setBuyerStatus('error');
+          setBuyerReason('Tab sharing cancelled or denied. Typed input available.');
           console.warn('Screen/tab audio capture cancelled or failed:', err);
-          // Fall back gracefully to seller mic only + manual typed buyer input
         }
+      } else {
+        setBuyerStatus('inactive');
+        setBuyerReason('Mic-only mode active. Use manual typed buyer input.');
       }
 
       // 4. Initialize AudioContext and Downsamplers
@@ -293,8 +327,11 @@ export function usePeithoCall() {
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
-      ws.onopen = () => {
+      ws.onopen = async () => {
         setStatus('active');
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
 
         // Attach seller mic downsampler
         if (sellerStreamRef.current) {
@@ -388,6 +425,10 @@ export function usePeithoCall() {
     sessionId,
     error,
     sttProvider,
+    sellerStatus,
+    sellerReason,
+    buyerStatus,
+    buyerReason,
     sellerEnergy,
     buyerEnergy,
     isMicMuted,

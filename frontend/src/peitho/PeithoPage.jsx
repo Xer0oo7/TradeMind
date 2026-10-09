@@ -30,6 +30,10 @@ export default function PeithoPage() {
     sessionId,
     error,
     sttProvider,
+    sellerStatus,
+    sellerReason,
+    buyerStatus,
+    buyerReason,
     sellerEnergy,
     buyerEnergy,
     isMicMuted,
@@ -360,99 +364,174 @@ export default function PeithoPage() {
                   <span className="text-[10px] font-heading font-black">TAB</span>
                 </div>
 
-                {/* End Call */}
-                <button
-                  onClick={endCall}
-                  className="px-3 py-1 bg-neo-maroon text-neo-cream border-2 border-neo-navy font-heading font-bold text-xs uppercase shadow-[2px_2px_0px_#001524] hover:translate-x-[1px] hover:translate-y-[1px] flex items-center gap-1"
-                >
-                  <PhoneOff className="w-3 h-3" />
-                  End
-                </button>
+              {/* End Call */}
+              <button
+                onClick={endCall}
+                className="px-3 py-1 bg-neo-maroon text-neo-cream border-2 border-neo-navy font-heading font-bold text-xs uppercase shadow-[2px_2px_0px_#001524] hover:translate-x-[1px] hover:translate-y-[1px] flex items-center gap-1"
+              >
+                <PhoneOff className="w-3 h-3" />
+                End
+              </button>
+            </div>
+          </div>
+
+          {/* ── AUDIO CHANNELS & PROVIDER HEALTH STRIP ── */}
+          <div className="bg-neo-cream border-2 border-neo-navy p-2.5 rounded flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* SELLER Status */}
+              <div
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded border-2 border-neo-navy font-bold text-[11px] ${
+                  sellerStatus === 'live'
+                    ? 'bg-emerald-100 text-emerald-900 border-emerald-800'
+                    : sellerStatus === 'error'
+                    ? 'bg-rose-100 text-rose-900 border-rose-800'
+                    : 'bg-amber-100 text-amber-900 border-amber-800'
+                }`}
+                title={sellerReason}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    sellerStatus === 'live'
+                      ? 'bg-emerald-600 animate-pulse'
+                      : sellerStatus === 'error'
+                      ? 'bg-rose-600'
+                      : 'bg-amber-500 animate-ping'
+                  }`}
+                />
+                <span>SELLER audio: {sellerStatus}</span>
+                {sellerStatus !== 'live' && (
+                  <span className="text-[10px] font-normal opacity-90 hidden sm:inline">({sellerReason})</span>
+                )}
+              </div>
+
+              {/* BUYER Status */}
+              <div
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded border-2 border-neo-navy font-bold text-[11px] ${
+                  buyerStatus === 'live'
+                    ? 'bg-emerald-100 text-emerald-900 border-emerald-800'
+                    : buyerStatus === 'error'
+                    ? 'bg-rose-100 text-rose-900 border-rose-800'
+                    : buyerStatus === 'inactive'
+                    ? 'bg-gray-100 text-gray-700 border-gray-600'
+                    : 'bg-amber-100 text-amber-900 border-amber-800'
+                }`}
+                title={buyerReason}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    buyerStatus === 'live'
+                      ? 'bg-emerald-600 animate-pulse'
+                      : buyerStatus === 'error'
+                      ? 'bg-rose-600'
+                      : buyerStatus === 'inactive'
+                      ? 'bg-gray-400'
+                      : 'bg-amber-500 animate-ping'
+                  }`}
+                />
+                <span>BUYER audio: {buyerStatus}</span>
+                {buyerStatus !== 'live' && (
+                  <span className="text-[10px] font-normal opacity-90 hidden sm:inline">({buyerReason})</span>
+                )}
               </div>
             </div>
 
-            {/* Transcript Stream Feed */}
-            <div className="neo-card p-4 flex-1 flex flex-col h-[500px] sm:h-[560px] bg-white">
-              <div className="flex items-center justify-between pb-2 border-b-2 border-neo-navy mb-3">
-                <span className="font-heading font-black text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <Radio className="w-3.5 h-3.5 text-neo-orange animate-pulse" />
-                  Dual-Channel Live Conversation Feed
-                </span>
-                <span className="text-[10px] font-bold text-neo-navy/60 font-mono">
-                  {transcripts.length} utterances
-                </span>
-              </div>
+            {/* STT Provider Badge */}
+            <div className="flex items-center gap-1.5 text-[11px] font-heading font-black text-neo-navy/80 bg-white px-2.5 py-1 border border-neo-navy rounded">
+              <Zap className="w-3 h-3 text-neo-orange" />
+              <span>STT: {sttProvider}</span>
+            </div>
+          </div>
 
-              {/* Scrollable Transcript List */}
-              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-                {transcripts.length === 0 && !partialSellerText && !partialBuyerText && (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-6 text-neo-navy/50">
-                    <Activity className="w-8 h-8 mb-2 animate-bounce opacity-40" />
-                    <p className="font-heading font-bold text-sm">Listening for conversation...</p>
-                    <p className="text-xs max-w-xs mt-1">
-                      Speak into your microphone or let the buyer speak in Google Meet. Speech appears here automatically.
-                    </p>
-                  </div>
-                )}
+          {/* ── HEADPHONES ECHO NOTICE ── */}
+          <div className="bg-amber-50 border-2 border-amber-400/80 p-2 rounded text-xs flex items-center gap-2 text-amber-900 font-medium">
+            <span className="text-sm">🎧</span>
+            <span>
+              <strong>Echo Prevention Tip:</strong> Wear headphones during your Google Meet call so your microphone does not pick up the buyer's voice from your speakers.
+            </span>
+          </div>
 
-                {transcripts.map((t) => {
-                  const isSeller = t.channel === 'SELLER';
-                  return (
-                    <div
-                      key={t.id}
-                      className={`flex flex-col ${isSeller ? 'items-end' : 'items-start'}`}
-                    >
-                      <div className="flex items-center gap-1.5 mb-1 px-1">
-                        <span
-                          className={`text-[10px] font-heading font-black px-1.5 py-0.2 rounded border border-neo-navy ${
-                            isSeller
-                              ? 'bg-neo-teal text-neo-cream'
-                              : 'bg-neo-orange text-neo-navy'
-                          }`}
-                        >
-                          {isSeller ? 'YOU (SELLER)' : 'BUYER'}
-                        </span>
-                        <span className="text-[10px] text-neo-navy/50 font-mono">
-                          {new Date(t.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                        </span>
-                      </div>
+          {/* Transcript Stream Feed */}
+          <div className="neo-card p-4 flex-1 flex flex-col h-[500px] sm:h-[560px] bg-white">
+            <div className="flex items-center justify-between pb-2 border-b-2 border-neo-navy mb-3">
+              <span className="font-heading font-black text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <Radio className="w-3.5 h-3.5 text-neo-orange animate-pulse" />
+                Dual-Channel Live Conversation Feed
+              </span>
+              <span className="text-[10px] font-bold text-neo-navy/60 font-mono">
+                {transcripts.length} utterances
+              </span>
+            </div>
 
-                      <div
-                        className={`max-w-[85%] p-3 border-2 border-neo-navy font-medium text-sm leading-relaxed shadow-[2px_2px_0px_#001524] ${
+            {/* Scrollable Transcript List */}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              {transcripts.length === 0 && !partialSellerText && !partialBuyerText && (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-neo-navy/50">
+                  <Activity className="w-8 h-8 mb-2 animate-bounce opacity-40" />
+                  <p className="font-heading font-bold text-sm">Listening for conversation...</p>
+                  <p className="text-xs max-w-xs mt-1">
+                    Speak into your microphone or let the buyer speak in Google Meet. Speech appears here automatically.
+                  </p>
+                </div>
+              )}
+
+              {transcripts.map((t) => {
+                const isSeller = t.channel === 'SELLER';
+                return (
+                  <div
+                    key={t.id}
+                    className={`flex flex-col ${isSeller ? 'items-end' : 'items-start'}`}
+                  >
+                    <div className="flex items-center gap-1.5 mb-1 px-1">
+                      <span
+                        className={`text-[10px] font-heading font-black px-1.5 py-0.2 rounded border border-neo-navy ${
                           isSeller
-                            ? 'bg-neo-cream text-neo-navy rounded-tl-lg rounded-bl-lg rounded-tr-xs'
-                            : 'bg-white text-neo-navy rounded-tr-lg rounded-br-lg rounded-tl-xs'
+                            ? 'bg-neo-teal text-neo-cream'
+                            : 'bg-neo-orange text-neo-navy'
                         }`}
                       >
-                        {t.text}
-                      </div>
+                        {isSeller ? 'YOU (SELLER)' : 'BUYER'}
+                      </span>
+                      <span className="text-[10px] text-neo-navy/50 font-mono">
+                        {new Date(t.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </span>
                     </div>
-                  );
-                })}
 
-                {/* Live Partial Speech Indicators */}
-                {partialSellerText && (
-                  <div className="flex flex-col items-end opacity-80 animate-pulse">
-                    <span className="text-[10px] font-heading font-bold text-neo-teal mb-0.5">YOU are speaking...</span>
-                    <div className="max-w-[85%] p-2.5 border-2 border-dashed border-neo-teal bg-neo-teal/10 text-xs italic">
-                      "{partialSellerText}"
-                    </div>
-                  </div>
-                )}
-
-                {partialBuyerText && (
-                  <div className="flex flex-col items-start opacity-80 animate-pulse">
-                    <span className="text-[10px] font-heading font-bold text-neo-orange mb-0.5">BUYER is speaking...</span>
-                    <div className="max-w-[85%] p-2.5 border-2 border-dashed border-neo-orange bg-neo-orange/10 text-xs italic">
-                      "{partialBuyerText}"
+                    <div
+                      className={`max-w-[85%] p-3 border-2 border-neo-navy font-medium text-sm leading-relaxed shadow-[2px_2px_0px_#001524] ${
+                        isSeller
+                          ? 'bg-neo-cream text-neo-navy rounded-tl-lg rounded-bl-lg rounded-tr-xs'
+                          : 'bg-white text-neo-navy rounded-tr-lg rounded-br-lg rounded-tl-xs'
+                      }`}
+                    >
+                      {t.text}
                     </div>
                   </div>
-                )}
+                );
+              })}
 
-                <div ref={transcriptEndRef} />
-              </div>
+              {/* Live Partial Speech Indicators (Grey) */}
+              {partialSellerText && (
+                <div className="flex flex-col items-end opacity-75 animate-pulse">
+                  <span className="text-[10px] font-mono font-medium text-gray-500 mb-0.5">YOU (speaking...):</span>
+                  <div className="max-w-[85%] p-2.5 border-2 border-dashed border-gray-400 bg-gray-100 text-gray-700 text-xs italic rounded">
+                    "{partialSellerText}"
+                  </div>
+                </div>
+              )}
 
-              {/* Manual Speech Injection Form */}
+              {partialBuyerText && (
+                <div className="flex flex-col items-start opacity-75 animate-pulse">
+                  <span className="text-[10px] font-mono font-medium text-gray-500 mb-0.5">BUYER (speaking...):</span>
+                  <div className="max-w-[85%] p-2.5 border-2 border-dashed border-gray-400 bg-gray-100 text-gray-700 text-xs italic rounded">
+                    "{partialBuyerText}"
+                  </div>
+                </div>
+              )}
+
+              <div ref={transcriptEndRef} />
+            </div>
+
+            {/* Manual Speech Injection Form */}
               <form onSubmit={handleSendManual} className="mt-3 pt-3 border-t-2 border-neo-navy flex gap-2">
                 <select
                   value={typedSpeaker}

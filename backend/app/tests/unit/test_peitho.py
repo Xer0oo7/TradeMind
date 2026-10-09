@@ -208,6 +208,12 @@ def test_peitho_rest_api(mock_replies):
         assert ready_msg["type"] == "ready"
         assert ready_msg["session_id"] == session_id
 
+        def recv_non_state():
+            m = ws.receive_json()
+            while m.get("type") == "state":
+                m = ws.receive_json()
+            return m
+
         # Send a typed buyer transcript line
         ws.send_json({
             "type": "transcript_line",
@@ -217,13 +223,13 @@ def test_peitho_rest_api(mock_replies):
         })
 
         # Expect final_transcript message
-        final_msg = ws.receive_json()
+        final_msg = recv_non_state()
         assert final_msg["type"] == "final_transcript"
         assert final_msg["channel"] == "BUYER"
         assert "200" in final_msg["text"]
 
         # Expect advisory message
-        adv_msg = ws.receive_json()
+        adv_msg = recv_non_state()
         assert adv_msg["type"] == "advisory"
         advisory_data = adv_msg["data"]
         assert advisory_data["action"] in ["COUNTER", "ACCEPT", "REJECT", "WALK_AWAY"]
@@ -237,15 +243,190 @@ def test_peitho_rest_api(mock_replies):
             "is_final": True,
         })
 
-        seller_final = ws.receive_json()
+        seller_final = recv_non_state()
         assert seller_final["type"] == "final_transcript"
         assert seller_final["channel"] == "SELLER"
 
-        seller_update = ws.receive_json()
+        seller_update = recv_non_state()
         assert seller_update["type"] == "seller_update"
         assert seller_update["detected_price"] == 220.0
 
         # Close call
         ws.send_json({"type": "end_call"})
-        call_ended = ws.receive_json()
+        call_ended = recv_non_state()
         assert call_ended["type"] == "call_ended"
+
+
+def test_mocked_provider_orchestrator_events():
+    """
+    Test that mocked provider's partial/final events feed through the orchestrator:
+    - BUYER final produces an advisory recommendation message
+    - SELLER final does NOT trigger the advisory engine
+    """
+    client = TestClient(app)
+    start_res = client.post("/api/v1/peitho/start", json={
+        "product_name": "Premium Cloud Server",
+        "base_price": 500.0,
+        "cost_price": 250.0,
+        "min_floor": 350.0,
+        "mode": "MAX_PROFIT",
+        "max_rounds": 5,
+        "quantity": 1,
+    })
+    session_id = start_res.json()["session_id"]
+
+    with client.websocket_connect(f"/api/v1/peitho/ws/{session_id}") as ws:
+        def recv_non_state():
+            m = ws.receive_json()
+            while m.get("type") == "state":
+                m = ws.receive_json()
+            return m
+
+        ready_msg = ws.receive_json()
+        assert ready_msg["type"] == "ready"
+
+        # 1. SELLER partial event
+        ws.send_json({
+            "type": "transcript_line",
+            "channel": "mic",
+            "text": "I can offer",
+            "is_final": False,
+        })
+        seller_partial = recv_non_state()
+        assert seller_partial["type"] == "partial_transcript"
+        assert seller_partial["channel"] == "SELLER"
+
+        # 2. SELLER final event (verbal counter: $460)
+        ws.send_json({
+            "type": "transcript_line",
+            "channel": "mic",
+            "text": "I can offer $460 for this configuration today.",
+            "is_final": True,
+        })
+        seller_final = recv_non_state()
+        assert seller_final["type"] == "final_transcript"
+        assert seller_final["channel"] == "SELLER"
+
+        seller_update = recv_non_state()
+        assert seller_update["type"] == "seller_update"
+        assert seller_update["detected_price"] == 460.0
+
+        # Invariant: SELLER final MUST NOT emit an advisory message
+        # Verify by sending a ping to prove no intermediate advisory was queued
+        ws.send_json({"type": "ping"})
+        pong_msg = recv_non_state()
+        assert pong_msg["type"] == "pong"
+
+        # 3. BUYER partial event
+        ws.send_json({
+            "type": "transcript_line",
+            "channel": "tab",
+            "text": "That is high, could you",
+            "is_final": False,
+        })
+        buyer_partial = recv_non_state()
+        assert buyer_partial["type"] == "partial_transcript"
+        assert buyer_partial["channel"] == "BUYER"
+
+        # 4. BUYER final event -> MUST trigger Advisory Engine
+        ws.send_json({
+            "type": "transcript_line",
+            "channel": "tab",
+            "text": "That is too high, how about $400 flat?",
+            "is_final": True,
+        })
+        buyer_final = recv_non_state()
+        assert buyer_final["type"] == "final_transcript"
+        assert buyer_final["channel"] == "BUYER"
+
+        buyer_advisory = recv_non_state()
+        assert buyer_advisory["type"] == "advisory"
+        assert buyer_advisory["data"]["action"] in ["COUNTER", "ACCEPT", "REJECT", "FINAL_OFFER"]
+        assert buyer_advisory["data"]["counter_price"] >= 350.0
+
+        ws.send_json({"type": "end_call"})
+        assert recv_non_state()["type"] == "call_ended"
+
+
+def test_audio_mic_and_tab_channel_routing(monkeypatch):
+    """
+    Test that audio messages on 'mic' and 'tab' are routed to separate STT instances.
+    """
+    import base64
+    from app.peitho.stt.base import BaseSTTAdapter
+
+    class DummySTT(BaseSTTAdapter):
+        def __init__(self, channel_name: str):
+            super().__init__(channel_name=channel_name)
+            self.received_chunks = []
+            self._is_active = True
+
+        async def start(self) -> None:
+            pass
+
+        async def send_audio(self, pcm_chunk: bytes) -> None:
+            self.received_chunks.append(pcm_chunk)
+
+        async def close(self) -> None:
+            pass
+
+    seller_instance = DummySTT(channel_name="SELLER")
+    buyer_instance = DummySTT(channel_name="BUYER")
+
+    def mock_get_adapter(provider=None, channel="default", on_status_change=None):
+        if channel == "SELLER":
+            return seller_instance
+        return buyer_instance
+
+    monkeypatch.setattr("app.peitho.routes.get_stt_adapter", mock_get_adapter)
+
+    client = TestClient(app)
+    start_res = client.post("/api/v1/peitho/start", json={
+        "product_name": "Test Hardware",
+        "base_price": 100.0,
+        "cost_price": 50.0,
+        "min_floor": 70.0,
+    })
+    session_id = start_res.json()["session_id"]
+
+    sample_pcm = b"\x01\x02\x03\x04" * 100
+    b64_audio = base64.b64encode(sample_pcm).decode("ascii")
+
+    with client.websocket_connect(f"/api/v1/peitho/ws/{session_id}") as ws:
+        def recv_non_state():
+            m = ws.receive_json()
+            while m.get("type") == "state":
+                m = ws.receive_json()
+            return m
+
+        ready_msg = ws.receive_json()
+        assert ready_msg["type"] == "ready"
+
+        # 1. Send audio on 'mic' channel
+        ws.send_json({
+            "type": "audio",
+            "channel": "mic",
+            "data": b64_audio,
+        })
+
+        # 2. Send audio on 'tab' channel
+        ws.send_json({
+            "type": "audio",
+            "channel": "tab",
+            "data": b64_audio,
+        })
+
+        # Send ping to synchronize socket loop
+        ws.send_json({"type": "ping"})
+        assert recv_non_state()["type"] == "pong"
+
+        # Assert routed to separate STT instances
+        assert len(seller_instance.received_chunks) == 1
+        assert seller_instance.received_chunks[0] == sample_pcm
+
+        assert len(buyer_instance.received_chunks) == 1
+        assert buyer_instance.received_chunks[0] == sample_pcm
+
+        ws.send_json({"type": "end_call"})
+        assert recv_non_state()["type"] == "call_ended"
+
