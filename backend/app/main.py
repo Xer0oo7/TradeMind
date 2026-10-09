@@ -29,6 +29,7 @@ from .api import (
 from .analytics import analytics_router
 from .infrastructure.database.session import close_pool as close_mysql_pool
 from .call_feature import voice_router
+from .peitho.routes import peitho_router
 
 # Import competitive intelligence router from buisness anlytics module
 import sys, os
@@ -63,7 +64,7 @@ def create_app() -> FastAPI:
     Creates and configures the FastAPI application.
     """
     app = FastAPI(
-        title="Negotiation Engine API",
+        title="Peitho Negotiation Engine API",
         description="""
         A profit-aware negotiation engine for commercial use.
         
@@ -177,17 +178,19 @@ def create_app() -> FastAPI:
     app.include_router(analytics_router)
     app.include_router(competitive_router)
     app.include_router(voice_router)
+    app.include_router(peitho_router)
     
     # Root endpoint
     @app.get("/", tags=["Root"])
     async def root():
         """Root endpoint with API info."""
         return {
-            "name": "Negotiation Engine API",
+            "name": "Peitho Negotiation Engine API",
             "version": "1.0.0",
             "docs": "/docs" if settings.debug else None,
             "health": "/api/v1/negotiate/health",
             "analytics": "/api/v1/analytics/calculate",
+            "peitho": "/api/v1/peitho/health",
         }
     
     return app

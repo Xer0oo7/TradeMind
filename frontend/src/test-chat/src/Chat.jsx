@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Send, Loader2, AlertCircle, TrendingUp, RotateCcw, Plus, Minus, Zap, Shield, Phone, X, CheckCircle, Package, Search, ChevronDown, Database, Edit3, PhoneCall } from 'lucide-react';
 import { createSession, sendChat, healthCheck, dbStartSession, dbSaveMessage, dbCloseSession, dbSaveCallbackRequest } from './api';
 import { getProducts } from '../../lib/productStore';
@@ -448,7 +448,7 @@ export default function Chat() {
                         <div className="w-12 h-12 bg-neo-orange flex items-center justify-center border-4 border-neo-navy">
                             <TrendingUp className="w-7 h-7 text-neo-navy" />
                         </div>
-                        <h1 className="text-3xl font-bold font-heading text-neo-navy">Trade Mind</h1>
+                        <h1 className="text-3xl font-bold font-heading text-neo-navy">Peitho</h1>
                     </div>
 
                     <div className="neo-card p-6 space-y-6">
@@ -754,7 +754,7 @@ export default function Chat() {
                             <TrendingUp className="w-6 h-6 text-neo-navy" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold font-heading">Trade Mind</h1>
+                            <h1 className="text-2xl font-bold font-heading">Peitho</h1>
                             <p className="text-sm text-neo-cream/70">AI Negotiation Engine</p>
                         </div>
                     </div>

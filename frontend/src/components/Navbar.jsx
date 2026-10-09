@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, Settings, Code, Menu, X, Key, Mail, User, LogOut, ChevronDown, Shield, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Settings, Code, Menu, X, Key, Mail, User, LogOut, ChevronDown, Shield, AlertTriangle, Radio } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { getAuthUser, getAuthToken, logout as apiLogout, isAuthenticated } from '../lib/api';
@@ -60,6 +60,7 @@ export default function Navbar() {
   // Main nav links (removed API & Email — moved to user dropdown)
   const navLinks = [
     { path: '/', label: t('navbar.home'), icon: null },
+    { path: '/meet-assistant', label: 'Meet Assistant', icon: Radio },
     { path: '/products', label: 'Products', icon: LayoutDashboard },
     { path: '/authority', label: t('navbar.authority'), icon: BarChart3 },
     { path: '/jury', label: 'Dashboard', icon: BarChart3 },
@@ -87,11 +88,11 @@ export default function Navbar() {
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
             <img
               src={faviconSvg}
-              alt="Trade Mind Logo"
+              alt="Peitho Logo"
               className="w-10 h-10 sm:w-12 sm:h-12"
             />
             <span className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-neo-navy">
-              TRADE<span className="text-neo-orange">MIND</span>
+              PEI<span className="text-neo-orange">THO</span>
             </span>
           </Link>
 

@@ -1,6 +1,6 @@
-# TradeMind — Current Features
+# Peitho — Current Features
 
-TradeMind is a profit-aware, multi-agent negotiation engine with a conversational interface for e-commerce sellers. Below is a detailed breakdown of all the current features implemented in the project.
+Peitho is a profit-aware, multi-agent negotiation engine with a conversational interface for e-commerce sellers. Below is a detailed breakdown of all the current features implemented in the project.
 
 ## 1. Negotiation Engine
 * **Multi-agent Architecture**: Three specialized agents coordinated by an orchestration engine:

@@ -16,7 +16,7 @@ export default function Footer() {
                 <TrendingUp className="w-5 h-5 text-neo-navy" />
               </div>
               <span className="font-heading text-xl font-bold">
-                TRADE<span className="text-neo-orange">MIND</span>
+                PEI<span className="text-neo-orange">THO</span>
               </span>
             </div>
             <p className="text-neo-cream/60 text-sm">

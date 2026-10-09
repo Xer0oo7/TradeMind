@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { SessionProvider } from './context/SessionContext';
 import { I18nProvider } from './context/I18nContext';
 import LanguageModal from './components/LanguageModal';
@@ -17,6 +17,7 @@ import ProductCatalog from './pages/ProductCatalog';
 import ApiAccess from './pages/ApiAccess';
 import EmailSettings from './pages/EmailSettings';
 import Chat from './test-chat/src/Chat';
+import PeithoPage from './peitho/PeithoPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -66,6 +67,11 @@ function App() {
 
             {/* Chat / Negotiation Demo */}
             <Route path="/chat" element={<Chat />} />
+
+            {/* Meet Assistant (Live Negotiation Copilot) */}
+            <Route path="/meet-assistant" element={<PeithoPage />} />
+            <Route path="/meet-asistant" element={<PeithoPage />} />
+            <Route path="/peitho" element={<Navigate to="/meet-assistant" replace />} />
 
             {/* 404 Catch-all */}
             <Route path="*" element={

@@ -563,7 +563,7 @@ export default function ApiReference() {
                       Multi-Agent Architecture
                     </h3>
                     <p className="text-neo-navy/70 text-sm leading-relaxed mb-4">
-                      TradeMind uses a three-agent pipeline for every negotiation turn. No single LLM call makes pricing decisions — 
+                      Peitho uses a three-agent pipeline for every negotiation turn. No single LLM call makes pricing decisions — 
                       the pricing agent is fully deterministic and auditable.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -811,7 +811,7 @@ export default function ApiReference() {
                   Ready to Build?
                 </h2>
                 <p className="text-neo-cream/60 text-sm sm:text-base mb-6 max-w-md mx-auto">
-                  Start integrating TradeMind's negotiation AI and analytics engine into your product today.
+                  Start integrating Peitho's negotiation AI and analytics engine into your product today.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                   <Link to="/authority">
