@@ -45,6 +45,8 @@ export function usePeithoCall() {
   const [error, setError] = useState(null);
   const [sttProvider, setSttProvider] = useState('ElevenLabs');
 
+  const [language, setLanguage] = useState('en'); // 'en' | 'hi' | 'auto'
+
   // Per-channel live status indicators
   const [sellerStatus, setSellerStatus] = useState('connecting'); // connecting | live | error | inactive
   const [sellerReason, setSellerReason] = useState('Waiting for microphone...');
@@ -126,9 +128,12 @@ export function usePeithoCall() {
 
       const input = e.inputBuffer.getChannelData(0);
 
-      // RMS calculation
+      // RMS and Peak calculation
       let sum = 0;
+      let peak = 0;
       for (let i = 0; i < input.length; i++) {
+        const absVal = Math.abs(input[i]);
+        if (absVal > peak) peak = absVal;
         sum += input[i] * input[i];
       }
       const rms = Math.sqrt(sum / input.length);
@@ -197,27 +202,61 @@ export function usePeithoCall() {
         } else {
           setPartialBuyerText('');
         }
-        setTranscripts((prev) => [
-          ...prev,
-          {
-            id: msg.id || String(Date.now()),
-            channel: msg.channel,
-            text: msg.text,
-            timestamp: msg.timestamp || Date.now() / 1000,
-          },
-        ]);
+        setTranscripts((prev) => {
+          // If merged turn, update previous message bubble
+          if (msg.is_merged && prev.length > 0 && prev[prev.length - 1].channel === msg.channel) {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
+              text: msg.text,
+              timestamp: msg.timestamp || Date.now() / 1000,
+            };
+            return updated;
+          }
+          return [
+            ...prev,
+            {
+              id: msg.id || String(Date.now()),
+              channel: msg.channel,
+              text: msg.text,
+              timestamp: msg.timestamp || Date.now() / 1000,
+            },
+          ];
+        });
         break;
 
       case 'advisory':
         if (msg.data) {
-          setAdvisory(msg.data);
-          if (msg.data.counter_price) {
-            setCurrentCounter(msg.data.counter_price);
+          const advData = {
+            ...msg.data,
+            recommendation_id: msg.recommendation_id || msg.data.recommendation_id,
+            source: msg.source || msg.data.source || 'template',
+            timing: msg.timing || msg.data.timing,
+          };
+          setAdvisory(advData);
+          if (advData.counter_price) {
+            setCurrentCounter(advData.counter_price);
           }
-          if (msg.data.metrics && msg.data.metrics.current_round !== undefined) {
-            setCurrentRound(msg.data.metrics.current_round);
+          if (advData.metrics && advData.metrics.current_round !== undefined) {
+            setCurrentRound(advData.metrics.current_round);
           }
         }
+        break;
+
+      case 'recommendation_update':
+        setAdvisory((prev) => {
+          if (!prev) return prev;
+          // Order safety: discard update if recommendation_id doesn't match active card
+          if (msg.recommendation_id && prev.recommendation_id && prev.recommendation_id !== msg.recommendation_id) {
+            return prev;
+          }
+          return {
+            ...prev,
+            suggested_replies: msg.suggested_replies || prev.suggested_replies,
+            source: msg.source || 'ai',
+            timing: msg.timing || prev.timing,
+          };
+        });
         break;
 
       case 'seller_update':
@@ -248,10 +287,11 @@ export function usePeithoCall() {
       setAdvisory(null);
 
       // 1. Initialize Peitho session via REST API
+      const payload = { ...sessionConfig, language: sessionConfig.language || language };
       const res = await fetch(`${API_BASE}/api/v1/peitho/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sessionConfig),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -271,6 +311,8 @@ export function usePeithoCall() {
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
+            sampleRate: 16000,
+            channelCount: 1,
           },
         });
         sellerStreamRef.current = sellerStream;
@@ -439,6 +481,8 @@ export function usePeithoCall() {
     advisory,
     currentCounter,
     currentRound,
+    language,
+    setLanguage,
     startCall,
     endCall,
     sendTypedLine,

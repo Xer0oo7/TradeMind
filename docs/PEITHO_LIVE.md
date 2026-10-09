@@ -125,9 +125,13 @@ When you obtain your ElevenLabs API key:
 - `{ "type": "end_call" }`
 
 #### Server → Client Messages:
-- `{ "type": "ready", "session_id": "...", "product_name": "...", "stt_provider": "..." }`
+- `{ "type": "ready", "session_id": "...", "product_name": "...", "stt_provider": "...", "language": "..." }`
+- `{ "type": "state", "seller_status": "...", "buyer_status": "..." }`
 - `{ "type": "partial_transcript", "channel": "SELLER"|"BUYER", "text": "..." }`
-- `{ "type": "final_transcript", "channel": "SELLER"|"BUYER", "text": "...", "timestamp": float }`
-- `{ "type": "advisory", "data": { "action": "COUNTER"|"ACCEPT"|"FINAL_OFFER"|"REJECT", "counter_price": float, "reasoning": str, "suggested_replies": [...], "metrics": {...} } }`
+- `{ "type": "final_transcript", "channel": "SELLER"|"BUYER", "text": "...", "timestamp": float, "is_merged": bool }`
+- `{ "type": "advisory", "recommendation_id": "...", "source": "template", "timing": {...}, "data": { "action": "COUNTER"|"ACCEPT"|"FINAL_OFFER"|"REJECT", "counter_price": float, "reasoning": str, "suggested_replies": [...], "metrics": {...} } }`
+- `{ "type": "recommendation_update", "recommendation_id": "...", "source": "ai", "suggested_replies": [...], "timing": {...} }`
 - `{ "type": "seller_update", "detected_price": float, "current_counter": float, "round": int }`
 - `{ "type": "call_ended" }`
+
+For full protocol details, see [PEITHO_PROTOCOL.md](PEITHO_PROTOCOL.md).

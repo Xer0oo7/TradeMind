@@ -12,30 +12,40 @@ from ..infrastructure.llm.openai_client import OpenRouterClient
 
 logger = structlog.get_logger(__name__)
 
-SUGGESTION_SYSTEM_PROMPT = """You are an elite live negotiation coach whispering tactical response options to a human seller who is currently speaking to a buyer on Google Meet.
-The pricing engine has ALREADY calculated the strategic decision and exact counter price.
-Your job is to give the seller 2 distinct, punchy, conversational spoken responses that they can read out loud right now.
+SUGGESTION_SYSTEM_PROMPT = """You are an elite live negotiation coach whispering tactical response options to a human seller who is speaking to a buyer on Google Meet.
+The pricing engine has already calculated the strategic decision and exact counter price.
+Give the seller 2 distinct, punchy, conversational spoken responses they can read out loud right now.
 
 RULES:
 1. Output ONLY a valid JSON list of 2 strings: ["response 1", "response 2"].
-2. Sound completely natural, conversational, and confident. No corporate buzzwords.
-3. Keep each response concise (1-2 sentences maximum).
+2. Natural, conversational, and confident spoken tone. No corporate buzzwords.
+3. Concise (1-2 sentences max per response).
 4. Strictly honor the engine's action and counter price.
-   - If COUNTER: State the counter price naturally with strong value justification.
-   - If ACCEPT: Gracefully close the deal at the agreed price.
-   - If REJECT / WALK_AWAY: Firmly and politely decline without burning the relationship.
-5. Never return markdown blocks or explanation. Return ONLY JSON array.
-"""
+   - COUNTER: State counter price naturally with strong value justification.
+   - ACCEPT: Gracefully close deal at the agreed price.
+   - REJECT / WALK_AWAY: Firmly and politely decline without burning relationship.
+5. Return ONLY the JSON array, no markdown or reasoning."""
 
-SUGGESTION_USER_TEMPLATE = """Negotiation Status:
-- Recommended Action: {action}
-- Target Counter Price: ${counter_price} per unit (Quantity: {quantity})
-- Engine Strategy Rationale: {reasoning}
-- Buyer Just Said: \"\"\"{buyer_message}\"\"\"
-- Current Round: {round_num} of {max_rounds}
-- Firmness Level: {firmness} (0=flexible, 1=cautious, 2=firm, 3=final offer)
+SUGGESTION_USER_TEMPLATE = """FACTS:
+- Action: {action}
+- Counter: ${counter_price} (Qty: {quantity})
+- Strategy: {reasoning}
+- Buyer: \"\"\"{buyer_message}\"\"\"
+- Round: {round_num}/{max_rounds}
+- Firmness: {firmness}/3
 
-Generate 2 conversational replies for the seller:"""
+Replies:"""
+
+
+class PeithoIntelClient(OpenRouterClient):
+    """Specialized OpenRouter client tailored for Peitho live tactical copilot."""
+    def __init__(self):
+        super().__init__()
+        from ..core.config import get_settings
+        settings = get_settings()
+        self.model = settings.peitho_intel_model or self.model
+        self.max_tokens = settings.peitho_intel_max_tokens
+        self.timeout = settings.peitho_intel_timeout_seconds
 
 
 def _get_template_replies(
@@ -102,7 +112,7 @@ async def generate_tactical_replies(
         firmness=state.firmness_level,
     )
 
-    client = llm_client or OpenRouterClient()
+    client = llm_client or PeithoIntelClient()
     if not client.enabled:
         return fallback_replies
 

@@ -17,32 +17,36 @@ from ..agents.negotiation_engine import (
     BuyerArchetype,
 )
 
+from .normalizer import normalize_transcript
+
 logger = structlog.get_logger(__name__)
 
 
 # ── Regex patterns for robust price & quantity extraction from live speech ──
 PRICE_PATTERNS = [
-    # "$95" or "$ 95.50" or "$1,200"
-    re.compile(r"\$\s*([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)", re.IGNORECASE),
-    # "95 dollars" or "95.50 bucks"
-    re.compile(r"\b([0-9]+(?:\.[0-9]{1,2})?)\s*(?:dollars|dollar|bucks|usd)\b", re.IGNORECASE),
-    # "at 95" or "for 95" or "give you 95" or "offer 95" or "do 95"
-    re.compile(r"\b(?:at|for|offer|offering|pay|do|counter|about)\s+([0-9]+(?:\.[0-9]{1,2})?)\b", re.IGNORECASE),
-    # "95 apiece" or "95 per unit" or "95 each"
-    re.compile(r"\b([0-9]+(?:\.[0-9]{1,2})?)\s*(?:each|apiece|per\s+unit|a\s+unit)\b", re.IGNORECASE),
+    # "$95" or "₹95" or "$ 95.50" or "$1,200"
+    re.compile(r"[\$₹]\s*([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)", re.IGNORECASE),
+    # "95 dollars" or "95.50 bucks" or "95 rupees" or "95 rs" or "95 inr"
+    re.compile(r"\b([0-9]+(?:\.[0-9]{1,2})?)\s*(?:dollars|dollar|bucks|usd|rupees|rupee|rs|inr|रुपये|रुपए)\b", re.IGNORECASE),
+    # "at 95" or "for 95" or "give you 95" or "offer 95" or "do 95" or "में 95"
+    re.compile(r"\b(?:at|for|offer|offering|pay|do|counter|about|give\s+you|दे\s+सकता|mein|में)\s+([0-9]+(?:\.[0-9]{1,2})?)\b", re.IGNORECASE),
+    # "95 apiece" or "95 per unit" or "95 each" or "95 per piece"
+    re.compile(r"\b([0-9]+(?:\.[0-9]{1,2})?)\s*(?:each|apiece|per\s+unit|a\s+unit|per\s+piece|a\s+piece)\b", re.IGNORECASE),
+    # Standalone number: e.g. "Can we do 95?" or "How about 95?"
+    re.compile(r"\b([0-9]+(?:\.[0-9]{1,2})?)\b"),
 ]
 
 QUANTITY_PATTERNS = [
     # "10 units" or "10 pieces" or "10 items"
-    re.compile(r"\b([0-9]+)\s*(?:units|unit|pcs|pieces|items|quantity|qty)\b", re.IGNORECASE),
+    re.compile(r"\b([0-9]+)\s*(?:units|unit|pcs|pieces|items|quantity|qty|peice|piece)\b", re.IGNORECASE),
     # "take 10" or "order 10" or "buy 10"
     re.compile(r"\b(?:take|order|buy|need|want)\s+([0-9]+)\b", re.IGNORECASE),
 ]
 
 TOTAL_FOR_QTY_PATTERNS = [
-    # "$500 for 10" or "500 for 10 units"
+    # "$500 for 10" or "500 for 10 units" or "5000 rupees for 10"
     re.compile(
-        r"(?:\$)?([0-9]+(?:\.[0-9]{1,2})?)\s*(?:dollars)?\s+(?:total\s+)?for\s+([0-9]+)\s*(?:units|pcs)?",
+        r"(?:[\$₹])?([0-9]+(?:\.[0-9]{1,2})?)\s*(?:dollars|rupees|rs|bucks)?\s+(?:total\s+)?for\s+([0-9]+)\s*(?:units|pcs|pieces)?",
         re.IGNORECASE,
     ),
 ]
@@ -51,16 +55,19 @@ TOTAL_FOR_QTY_PATTERNS = [
 ACCEPT_KEYWORDS = [
     "deal", "sounds good", "i'll take it", "ill take it", "take it", "agreed",
     "accept", "works for me", "sold", "let's do it", "lets do it", "done deal",
+    "मंजूर", "deal done", "pakka",
 ]
 
 REJECT_KEYWORDS = [
     "too expensive", "no way", "can't do that", "cant do that", "impossible",
     "too high", "forget it", "no deal", "walk away", "i'll pass", "ill pass",
+    "बहुत महंगा", "nahi hoga", "nahi ho payega",
 ]
 
 INQUIRY_KEYWORDS = [
     "how much", "what is the price", "what's the price", "what can you do",
     "any discount", "best price", "what's your best", "whats your best",
+    "kitne ka", "kya price", "kitna discount",
 ]
 
 
@@ -87,7 +94,11 @@ class AdvisoryEngine:
         Extract numeric offers, quantity, and conversational intent using rule-based heuristics.
         Fast, zero-latency, and operates without external API dependencies.
         """
-        text_lower = text.lower().strip()
+        # Pre-normalize spoken numbers, Hindi/Hinglish terms, and currency
+        norm_text = normalize_transcript(text) if text else ""
+        text_lower = norm_text.lower().strip()
+        raw_text_lower = text.lower().strip() if text else ""
+
         extraction = {
             "quantity": current_quantity,
             "unit_price_offered": None,
@@ -102,11 +113,12 @@ class AdvisoryEngine:
             "conditional_offer": False,
             "condition_text": None,
             "raw_message": text,
+            "normalized_message": norm_text,
         }
 
         # Check for bundle / total patterns: "$500 for 10"
         for pattern in TOTAL_FOR_QTY_PATTERNS:
-            match = pattern.search(text)
+            match = pattern.search(norm_text)
             if match:
                 try:
                     total_val = float(match.group(1).replace(",", ""))
@@ -121,12 +133,14 @@ class AdvisoryEngine:
                     pass
 
         # Extract quantity
+        extracted_qty = None
         for pattern in QUANTITY_PATTERNS:
-            match = pattern.search(text)
+            match = pattern.search(norm_text)
             if match:
                 try:
                     qty = int(match.group(1))
                     if qty > 0:
+                        extracted_qty = qty
                         extraction["quantity"] = qty
                         break
                 except (ValueError, IndexError):
@@ -134,8 +148,9 @@ class AdvisoryEngine:
 
         # Extract price
         detected_price = None
-        for pattern in PRICE_PATTERNS:
-            match = pattern.search(text)
+        # First 4 targeted patterns (currency symbol, currency unit, preposition cue, per-unit)
+        for pattern in PRICE_PATTERNS[:4]:
+            match = pattern.search(norm_text)
             if match:
                 try:
                     val_str = match.group(1).replace(",", "")
@@ -144,6 +159,21 @@ class AdvisoryEngine:
                         detected_price = val
                         break
                 except (ValueError, IndexError):
+                    pass
+
+        # If still not found, check standalone numbers in norm_text
+        if detected_price is None:
+            all_numbers = re.findall(r"\b([0-9]+(?:\.[0-9]{1,2})?)\b", norm_text)
+            for n_str in all_numbers:
+                try:
+                    candidate = float(n_str.replace(",", ""))
+                    # Avoid picking the quantity as price if they differ
+                    if extracted_qty is not None and candidate == float(extracted_qty) and len(all_numbers) > 1:
+                        continue
+                    if candidate > 0:
+                        detected_price = candidate
+                        break
+                except ValueError:
                     pass
 
         if detected_price is not None:

@@ -7,8 +7,10 @@ computes PRANE-X advisory recommendations, and feeds live suggestions to the sel
 import asyncio
 import base64
 import json
+import os
 import time
 from typing import Optional
+from uuid import uuid4
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 import structlog
@@ -23,11 +25,17 @@ from .schemas import (
 )
 from .session_store import peitho_store
 from .advisory import AdvisoryEngine
-from .suggestions import generate_tactical_replies
+from .normalizer import normalize_transcript
+from .suggestions import generate_tactical_replies, _get_template_replies, PeithoIntelClient
 from .stt import get_stt_adapter, TypedSTTAdapter
 
 logger = structlog.get_logger(__name__)
 settings = get_settings()
+
+
+def is_peitho_debug() -> bool:
+    return settings.peitho_debug or os.getenv("PEITHO_DEBUG", "false").lower() in ("true", "1", "yes")
+
 
 peitho_router = APIRouter(prefix="/api/v1/peitho", tags=["Peitho Live Assistant"])
 
@@ -54,6 +62,7 @@ async def start_peitho_session(config: PeithoSessionConfig):
         "max_rounds": config.max_rounds,
         "initial_counter": initial_counter,
         "stt_provider": config.stt_provider or settings.peitho_stt_provider,
+        "language": config.language or settings.elevenlabs_language,
         "message": "Peitho session initialized successfully.",
     }
 
@@ -175,10 +184,27 @@ async def peitho_websocket(
         channel_states["buyer_reason"] = reason or f"Buyer channel is {status}"
         asyncio.create_task(broadcast_state())
 
-    # Instantiate initial STT adapters
+    # State tracking and optimization caches
+    speculative_cache: dict = {}
+    active_llm_task: Optional[asyncio.Task] = None
+    intel_client = PeithoIntelClient()
+    last_processed_rec_id: Optional[str] = None
+
+    # Instantiate initial STT adapters with session language preference
     stt_choice = channel_states["provider"]
-    seller_stt = get_stt_adapter(provider=stt_choice, channel="SELLER", on_status_change=on_seller_status)
-    buyer_stt = get_stt_adapter(provider=stt_choice, channel="BUYER", on_status_change=on_buyer_status)
+    session_lang = session.config.language or settings.elevenlabs_language
+    seller_stt = get_stt_adapter(
+        provider=stt_choice,
+        channel="SELLER",
+        on_status_change=on_seller_status,
+        language_code=session_lang,
+    )
+    buyer_stt = get_stt_adapter(
+        provider=stt_choice,
+        channel="BUYER",
+        on_status_change=on_buyer_status,
+        language_code=session_lang,
+    )
 
     # Send initial connection acknowledgment
     await websocket.send_json({
@@ -192,6 +218,7 @@ async def peitho_websocket(
             else session.config.base_price
         ),
         "stt_provider": seller_stt.__class__.__name__,
+        "language": session_lang,
         "message": "Connected to Peitho copilot. Audio capture active.",
     })
 
@@ -236,27 +263,106 @@ async def peitho_websocket(
                 "round": session.master_state.current_round,
             })
 
-    # ── Register BUYER STT Callbacks ──
+    # ── Register BUYER STT Callbacks with Speculative Pre-Compute & Two-Stage Push ──
     async def on_buyer_partial(text: str):
         await safe_send({
             "type": "partial_transcript",
             "channel": ChannelType.BUYER.value,
             "text": text,
         })
+        # Speculative pre-compute: if partial utterance has numbers/price clues, evaluate in background
+        if text and any(char.isdigit() for char in text):
+            try:
+                norm = normalize_transcript(text)
+                cur_counter = (
+                    session.master_state.counter_history[-1]
+                    if session.master_state.counter_history
+                    else session.config.base_price
+                )
+                ext = AdvisoryEngine.extract_intent_from_text(
+                    norm,
+                    base_price=session.config.base_price,
+                    current_counter=cur_counter,
+                    current_quantity=session.config.quantity,
+                )
+                cand_price = ext.get("unit_price_offered")
+                if cand_price is not None and cand_price not in speculative_cache:
+                    eng_res, _ = AdvisoryEngine.advise(session.master_state, buyer_text=text)
+                    speculative_cache[cand_price] = (eng_res, ext)
+            except Exception:
+                pass
 
-    async def process_buyer_final(text: str, line_id: str, timestamp: float):
-        """Async worker evaluating advisory engine and pushing tactical replies."""
+    async def on_buyer_final(text: str):
+        nonlocal active_llm_task, last_processed_rec_id
+        t2 = time.time()
+        # Retrieve t0 from buyer_stt if available
+        t0 = getattr(buyer_stt, "_last_audio_send_time", t2)
+
+        # ── VAD Merge Guard ──
+        # If previous line was BUYER within 1.0s and lacked terminal punctuation (. ! ?),
+        # merge with this line to treat as a continuous turn.
+        prev_line = session.transcript_history[-1] if session.transcript_history else None
+        is_merge = False
+        if (
+            prev_line
+            and prev_line.channel == ChannelType.BUYER
+            and (t2 - prev_line.timestamp) <= 1.0
+            and not prev_line.text.rstrip().endswith((".", "!", "?"))
+        ):
+            # Cancel prior in-flight Stage 2 task
+            if active_llm_task and not active_llm_task.done():
+                active_llm_task.cancel()
+
+            merged_text = f"{prev_line.text.rstrip()} {text.lstrip()}"
+            prev_line.text = merged_text
+            prev_line.timestamp = t2
+            effective_text = merged_text
+            line_id = prev_line.id
+            is_merge = True
+        else:
+            line = TranscriptLine(
+                channel=ChannelType.BUYER,
+                text=text,
+                is_partial=False,
+                timestamp=t2,
+            )
+            session.transcript_history.append(line)
+            effective_text = text
+            line_id = line.id
+
+        await safe_send({
+            "type": "final_transcript",
+            "id": line_id,
+            "channel": ChannelType.BUYER.value,
+            "text": effective_text,
+            "timestamp": t2,
+            "is_merged": is_merge,
+        })
+
+        # ── STAGE 1: IMMEDIATE TEMPLATE RECOMMENDATION (< 10 ms) ──
         try:
-            engine_result, extraction = AdvisoryEngine.advise(
-                session.master_state,
-                buyer_text=text,
+            norm_text = normalize_transcript(effective_text)
+            cur_counter = (
+                session.master_state.counter_history[-1]
+                if session.master_state.counter_history
+                else session.config.base_price
             )
-
-            suggestions = await generate_tactical_replies(
-                engine_result=engine_result,
-                buyer_text=text,
-                state=session.master_state,
+            extraction = AdvisoryEngine.extract_intent_from_text(
+                norm_text,
+                base_price=session.config.base_price,
+                current_counter=cur_counter,
+                current_quantity=session.config.quantity,
             )
+            offered_p = extraction.get("unit_price_offered")
+            if offered_p is not None and offered_p in speculative_cache:
+                engine_result, cached_ext = speculative_cache[offered_p]
+                speculative_cache.clear()
+            else:
+                speculative_cache.clear()
+                engine_result, extraction = AdvisoryEngine.advise(
+                    session.master_state,
+                    buyer_text=effective_text,
+                )
 
             decision_raw = str(getattr(engine_result, "decision", "counter")).lower()
             if decision_raw == "accept":
@@ -304,6 +410,25 @@ async def peitho_websocket(
                 max_rounds=session.config.max_rounds,
             )
 
+            template_replies = _get_template_replies(
+                action=action_str,
+                counter_price=counter_val,
+                quantity=session.config.quantity,
+                firmness=session.master_state.firmness_level,
+            )
+
+            t5 = time.time()
+            rec_id = str(uuid4())
+            last_processed_rec_id = rec_id
+
+            timing_stage1 = {
+                "t0": round(t0 * 1000, 2),
+                "t2": round(t2 * 1000, 2),
+                "t5": round(t5 * 1000, 2),
+                "t0_to_t2_ms": round((t2 - t0) * 1000, 2),
+                "t2_to_t5_ms": round((t5 - t2) * 1000, 2),
+            }
+
             advisory = AdvisoryResult(
                 action=action_str,
                 counter_price=counter_val,
@@ -312,40 +437,102 @@ async def peitho_websocket(
                 extracted_buyer_offer=extraction.get("unit_price_offered"),
                 extracted_buyer_intent=extraction.get("intent"),
                 extracted_quantity=extraction.get("quantity"),
-                suggested_replies=suggestions,
+                suggested_replies=template_replies,
                 metrics=metrics,
-                timestamp=time.time(),
+                timestamp=t5,
+                recommendation_id=rec_id,
+                source="template",
+                timing=timing_stage1,
             )
-
             session.last_advisory = advisory
 
             await safe_send({
                 "type": "advisory",
                 "data": advisory.model_dump(),
+                "recommendation_id": rec_id,
+                "source": "template",
+                "timing": timing_stage1,
             })
+
+            if is_peitho_debug():
+                logger.info(
+                    "peitho_stage1_pushed",
+                    rec_id=rec_id,
+                    t2_to_t5_ms=timing_stage1["t2_to_t5_ms"],
+                    action=action_str,
+                )
+
         except Exception as e:
-            logger.error("buyer_advisory_eval_failed", error_type=type(e).__name__)
+            logger.error("buyer_advisory_stage1_failed", error_type=type(e).__name__)
+            return
 
-    async def on_buyer_final(text: str):
-        line = TranscriptLine(
-            channel=ChannelType.BUYER,
-            text=text,
-            is_partial=False,
-            timestamp=time.time(),
+        # ── STAGE 2: ASYNC AI UPGRADE (CONCURRENT) ──
+        if active_llm_task and not active_llm_task.done():
+            active_llm_task.cancel()
+
+        async def run_stage2_upgrade(
+            target_rec_id: str,
+            eng_res: any,
+            buyer_msg: str,
+            st: any,
+            start_t0: float,
+            start_t2: float,
+            start_t5: float,
+        ):
+            try:
+                ai_replies = await generate_tactical_replies(
+                    engine_result=eng_res,
+                    buyer_text=buyer_msg,
+                    state=st,
+                    llm_client=intel_client,
+                )
+                t7 = time.time()
+                timing_stage2 = {
+                    "t0": round(start_t0 * 1000, 2),
+                    "t2": round(start_t2 * 1000, 2),
+                    "t5": round(start_t5 * 1000, 2),
+                    "t7": round(t7 * 1000, 2),
+                    "t2_to_t7_ms": round((t7 - start_t2) * 1000, 2),
+                    "t0_to_t7_ms": round((t7 - start_t0) * 1000, 2),
+                }
+
+                if target_rec_id == last_processed_rec_id:
+                    if session.last_advisory and session.last_advisory.recommendation_id == target_rec_id:
+                        session.last_advisory.suggested_replies = ai_replies
+                        session.last_advisory.source = "ai"
+                        session.last_advisory.timing = timing_stage2
+
+                    await safe_send({
+                        "type": "recommendation_update",
+                        "recommendation_id": target_rec_id,
+                        "source": "ai",
+                        "suggested_replies": ai_replies,
+                        "timing": timing_stage2,
+                    })
+
+                    if is_peitho_debug():
+                        logger.info(
+                            "peitho_stage2_upgraded",
+                            rec_id=target_rec_id,
+                            t2_to_t7_ms=timing_stage2["t2_to_t7_ms"],
+                        )
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                logger.warning("peitho_stage2_failed", error_type=type(e).__name__)
+
+        active_llm_task = asyncio.create_task(
+            run_stage2_upgrade(
+                target_rec_id=rec_id,
+                eng_res=engine_result,
+                buyer_msg=effective_text,
+                st=session.master_state,
+                start_t0=t0,
+                start_t2=t2,
+                start_t5=t5,
+            )
         )
-        session.transcript_history.append(line)
-
-        await safe_send({
-            "type": "final_transcript",
-            "id": line.id,
-            "channel": ChannelType.BUYER.value,
-            "text": text,
-            "timestamp": line.timestamp,
-        })
-
-        # Non-blocking advisory execution
-        task = asyncio.create_task(process_buyer_final(text, line.id, line.timestamp))
-        task.add_done_callback(task_done_logger)
+        active_llm_task.add_done_callback(task_done_logger)
 
     def bind_adapters(s_adapter, b_adapter):
         s_adapter.on_partial(on_seller_partial)

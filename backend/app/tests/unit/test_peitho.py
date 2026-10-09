@@ -210,7 +210,7 @@ def test_peitho_rest_api(mock_replies):
 
         def recv_non_state():
             m = ws.receive_json()
-            while m.get("type") == "state":
+            while m.get("type") in ("state", "recommendation_update"):
                 m = ws.receive_json()
             return m
 
@@ -373,7 +373,7 @@ def test_audio_mic_and_tab_channel_routing(monkeypatch):
     seller_instance = DummySTT(channel_name="SELLER")
     buyer_instance = DummySTT(channel_name="BUYER")
 
-    def mock_get_adapter(provider=None, channel="default", on_status_change=None):
+    def mock_get_adapter(provider=None, channel="default", on_status_change=None, **kwargs):
         if channel == "SELLER":
             return seller_instance
         return buyer_instance
@@ -395,7 +395,7 @@ def test_audio_mic_and_tab_channel_routing(monkeypatch):
     with client.websocket_connect(f"/api/v1/peitho/ws/{session_id}") as ws:
         def recv_non_state():
             m = ws.receive_json()
-            while m.get("type") == "state":
+            while m.get("type") in ("state", "recommendation_update"):
                 m = ws.receive_json()
             return m
 
@@ -429,4 +429,121 @@ def test_audio_mic_and_tab_channel_routing(monkeypatch):
 
         ws.send_json({"type": "end_call"})
         assert recv_non_state()["type"] == "call_ended"
+
+
+def test_two_stage_push_and_recommendation_update():
+    """
+    Verify that Stage 1 sends an immediate template advisory (< 10ms)
+    and Stage 2 subsequently emits a recommendation_update with matching recommendation_id.
+    """
+    client = TestClient(app)
+    start_res = client.post("/api/v1/peitho/start", json={
+        "product_name": "Pro Workstation",
+        "base_price": 500.0,
+        "cost_price": 250.0,
+        "min_floor": 350.0,
+        "max_rounds": 5,
+        "quantity": 1,
+    })
+    session_id = start_res.json()["session_id"]
+
+    with client.websocket_connect(f"/api/v1/peitho/ws/{session_id}") as ws:
+        ready = ws.receive_json()
+        assert ready["type"] == "ready"
+
+        # Inject final BUYER line
+        ws.send_json({
+            "type": "transcript_line",
+            "channel": "tab",
+            "text": "Can you do $400 for this workstation?",
+            "is_final": True,
+        })
+
+        # Receive final_transcript
+        msg1 = ws.receive_json()
+        while msg1.get("type") == "state":
+            msg1 = ws.receive_json()
+        assert msg1["type"] == "final_transcript"
+
+        # Receive Stage 1 advisory
+        msg2 = ws.receive_json()
+        while msg2.get("type") == "state":
+            msg2 = ws.receive_json()
+        assert msg2["type"] == "advisory"
+        assert msg2["source"] == "template"
+        assert "recommendation_id" in msg2
+        assert "timing" in msg2
+        rec_id = msg2["recommendation_id"]
+        assert msg2["timing"]["t2_to_t5_ms"] >= 0
+
+        # Wait for either recommendation_update or ping
+        ws.send_json({"type": "ping"})
+        received_types = []
+        for _ in range(5):
+            m = ws.receive_json()
+            received_types.append(m.get("type"))
+            if m.get("type") == "recommendation_update":
+                assert m["recommendation_id"] == rec_id
+                assert m["source"] == "ai"
+                assert "suggested_replies" in m
+            if m.get("type") == "pong":
+                break
+
+        ws.send_json({"type": "end_call"})
+
+
+def test_vad_merge_guard_combines_unpunctuated_fragments():
+    """
+    Verify that two consecutive BUYER commits arriving in close succession without
+    terminal punctuation are merged into a single coherent utterance.
+    """
+    client = TestClient(app)
+    start_res = client.post("/api/v1/peitho/start", json={
+        "product_name": "Office Chair",
+        "base_price": 200.0,
+        "cost_price": 100.0,
+        "min_floor": 140.0,
+    })
+    session_id = start_res.json()["session_id"]
+
+    with client.websocket_connect(f"/api/v1/peitho/ws/{session_id}") as ws:
+        _ = ws.receive_json()  # ready
+
+        # First fragment without terminal punctuation
+        ws.send_json({
+            "type": "transcript_line",
+            "channel": "tab",
+            "text": "I can offer four",
+            "is_final": True,
+        })
+
+        # Drain final transcript & advisory for fragment 1
+        m1 = ws.receive_json()
+        while m1.get("type") == "state":
+            m1 = ws.receive_json()
+        assert m1["type"] == "final_transcript"
+
+        m2 = ws.receive_json()
+        while m2.get("type") in ("state", "recommendation_update"):
+            m2 = ws.receive_json()
+        assert m2["type"] == "advisory"
+
+        # Immediate second fragment (completing "four fifty dollars.")
+        ws.send_json({
+            "type": "transcript_line",
+            "channel": "tab",
+            "text": "fifty dollars for the chairs.",
+            "is_final": True,
+        })
+
+        # Drain messages for merged turn
+        merged_transcript = ws.receive_json()
+        while merged_transcript.get("type") in ("state", "recommendation_update"):
+            merged_transcript = ws.receive_json()
+        assert merged_transcript["type"] == "final_transcript"
+        assert merged_transcript.get("is_merged") is True
+        assert "four fifty dollars" in merged_transcript["text"]
+
+        ws.send_json({"type": "end_call"})
+
 

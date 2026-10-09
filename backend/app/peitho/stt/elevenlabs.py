@@ -42,13 +42,39 @@ class ElevenLabsSTTAdapter(BaseSTTAdapter):
         channel_name: str = "default",
         ws_url: Optional[str] = None,
         on_status_change: Optional[Callable[[str, str], None]] = None,
+        vad_threshold: Optional[float] = None,
+        vad_silence_threshold_secs: Optional[float] = None,
+        min_speech_duration_ms: Optional[int] = None,
+        min_silence_duration_ms: Optional[int] = None,
     ):
         super().__init__(channel_name=channel_name)
-        self._api_key = (api_key or "").strip()
-        self._model_id = model_id
-        self._language_code = language_code
+        from ...core.config import get_settings
+        settings = get_settings()
+
+        self._api_key = (api_key if api_key is not None else settings.elevenlabs_api_key).strip()
+        self._model_id = model_id or settings.elevenlabs_stt_model
+        self._language_code = language_code if language_code is not None else settings.elevenlabs_language
         self._ws_url = ws_url or self.DEFAULT_WS_URL
         self._on_status_change = on_status_change
+
+        self._vad_threshold = (
+            vad_threshold if vad_threshold is not None else settings.elevenlabs_vad_threshold
+        )
+        self._vad_silence_threshold_secs = (
+            vad_silence_threshold_secs
+            if vad_silence_threshold_secs is not None
+            else settings.elevenlabs_vad_silence_threshold_secs
+        )
+        self._min_speech_duration_ms = (
+            min_speech_duration_ms
+            if min_speech_duration_ms is not None
+            else settings.elevenlabs_min_speech_duration_ms
+        )
+        self._min_silence_duration_ms = (
+            min_silence_duration_ms
+            if min_silence_duration_ms is not None
+            else settings.elevenlabs_min_silence_duration_ms
+        )
         
         self._ws: Optional[websockets.WebSocketClientProtocol] = None
         self._send_queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=100)
@@ -109,20 +135,20 @@ class ElevenLabsSTTAdapter(BaseSTTAdapter):
 
     async def _connect(self) -> None:
         """Establish WebSocket connection with VAD commit strategy and 16kHz PCM."""
-        # Query parameters per current ElevenLabs Realtime Scribe documentation:
-        # audio_format=pcm_16000
-        # commit_strategy=vad (auto-commits segments when speech stops)
-        # vad_threshold=0.4 (sensitivity)
-        # vad_silence_threshold_secs=1.5 (silence duration to trigger commit)
-        url = (
-            f"{self._ws_url}"
-            f"?model_id={self._model_id}"
-            f"&audio_format=pcm_16000"
-            f"&commit_strategy=vad"
-            f"&vad_threshold=0.4"
-            f"&vad_silence_threshold_secs=1.5"
-            f"&language_code={self._language_code}"
-        )
+        query_params = [
+            f"model_id={self._model_id}",
+            "audio_format=pcm_16000",
+            "commit_strategy=vad",
+            f"vad_threshold={self._vad_threshold}",
+            f"vad_silence_threshold_secs={self._vad_silence_threshold_secs}",
+            f"min_speech_duration_ms={self._min_speech_duration_ms}",
+            f"min_silence_duration_ms={self._min_silence_duration_ms}",
+        ]
+        lang = (self._language_code or "").strip().lower()
+        if lang and lang not in ("auto", "none"):
+            query_params.append(f"language_code={lang}")
+
+        url = f"{self._ws_url}?{'&'.join(query_params)}"
         headers = {
             "xi-api-key": self._api_key,
         }

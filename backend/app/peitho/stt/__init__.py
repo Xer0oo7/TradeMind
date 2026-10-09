@@ -20,6 +20,9 @@ def get_stt_adapter(
     provider: Optional[str] = None,
     channel: str = "default",
     on_status_change: Optional[Callable[[str, str], None]] = None,
+    language_code: Optional[str] = None,
+    vad_threshold: Optional[float] = None,
+    vad_silence_threshold_secs: Optional[float] = None,
 ) -> BaseSTTAdapter:
     """
     Factory function to obtain an STT adapter instance with tiered fallback:
@@ -27,15 +30,18 @@ def get_stt_adapter(
     """
     settings = get_settings()
     selected_provider = (provider or settings.peitho_stt_provider or "typed").lower().strip()
+    target_lang = language_code if language_code is not None else settings.elevenlabs_language
 
     if selected_provider == "elevenlabs":
         if settings.elevenlabs_api_key:
             return ElevenLabsSTTAdapter(
                 api_key=settings.elevenlabs_api_key,
                 model_id=settings.elevenlabs_stt_model,
-                language_code=settings.elevenlabs_language,
+                language_code=target_lang,
                 channel_name=channel,
                 on_status_change=on_status_change,
+                vad_threshold=vad_threshold,
+                vad_silence_threshold_secs=vad_silence_threshold_secs,
             )
         elif settings.sarvam_api_key:
             logger.info(

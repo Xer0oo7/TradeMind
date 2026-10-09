@@ -23,6 +23,38 @@ import {
 } from 'lucide-react';
 import { usePeithoCall } from './usePeithoCall';
 
+const TranscriptItem = React.memo(function TranscriptItem({ t }) {
+  const isSeller = t.channel === 'SELLER';
+  return (
+    <div className={`flex flex-col ${isSeller ? 'items-end' : 'items-start'}`}>
+      <div className="flex items-center gap-1.5 mb-1 px-1">
+        <span
+          className={`text-[10px] font-heading font-black px-1.5 py-0.2 rounded border border-neo-navy ${
+            isSeller
+              ? 'bg-neo-teal text-neo-cream'
+              : 'bg-neo-orange text-neo-navy'
+          }`}
+        >
+          {isSeller ? 'YOU (SELLER)' : 'BUYER'}
+        </span>
+        <span className="text-[10px] text-neo-navy/50 font-mono">
+          {new Date(t.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        </span>
+      </div>
+
+      <div
+        className={`max-w-[85%] p-3 border-2 border-neo-navy font-medium text-sm leading-relaxed shadow-[2px_2px_0px_#001524] ${
+          isSeller
+            ? 'bg-neo-cream text-neo-navy rounded-tl-lg rounded-bl-lg rounded-tr-xs'
+            : 'bg-white text-neo-navy rounded-tr-lg rounded-br-lg rounded-tl-xs'
+        }`}
+      >
+        {t.text}
+      </div>
+    </div>
+  );
+});
+
 export default function PeithoPage() {
   const navigate = useNavigate();
   const {
@@ -44,6 +76,8 @@ export default function PeithoPage() {
     advisory,
     currentCounter,
     currentRound,
+    language,
+    setLanguage,
     startCall,
     endCall,
     sendTypedLine,
@@ -274,6 +308,19 @@ export default function PeithoPage() {
                   className="w-full px-3 py-2 border-2 border-neo-navy bg-white font-medium text-sm"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-heading font-bold uppercase mb-1">STT Language & Code-Switching</label>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-neo-navy bg-white font-medium text-sm"
+                >
+                  <option value="en">English (Default)</option>
+                  <option value="hi">Hindi (हिन्दी)</option>
+                  <option value="auto">Multilingual / Auto (Code-Switching)</option>
+                </select>
+              </div>
             </div>
 
             {/* Quick Info Box */}
@@ -475,38 +522,7 @@ export default function PeithoPage() {
               )}
 
               {transcripts.map((t) => {
-                const isSeller = t.channel === 'SELLER';
-                return (
-                  <div
-                    key={t.id}
-                    className={`flex flex-col ${isSeller ? 'items-end' : 'items-start'}`}
-                  >
-                    <div className="flex items-center gap-1.5 mb-1 px-1">
-                      <span
-                        className={`text-[10px] font-heading font-black px-1.5 py-0.2 rounded border border-neo-navy ${
-                          isSeller
-                            ? 'bg-neo-teal text-neo-cream'
-                            : 'bg-neo-orange text-neo-navy'
-                        }`}
-                      >
-                        {isSeller ? 'YOU (SELLER)' : 'BUYER'}
-                      </span>
-                      <span className="text-[10px] text-neo-navy/50 font-mono">
-                        {new Date(t.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                      </span>
-                    </div>
-
-                    <div
-                      className={`max-w-[85%] p-3 border-2 border-neo-navy font-medium text-sm leading-relaxed shadow-[2px_2px_0px_#001524] ${
-                        isSeller
-                          ? 'bg-neo-cream text-neo-navy rounded-tl-lg rounded-bl-lg rounded-tr-xs'
-                          : 'bg-white text-neo-navy rounded-tr-lg rounded-br-lg rounded-tl-xs'
-                      }`}
-                    >
-                      {t.text}
-                    </div>
-                  </div>
-                );
+                return <TranscriptItem key={t.id} t={t} />;
               })}
 
               {/* Live Partial Speech Indicators (Grey) */}
@@ -565,13 +581,37 @@ export default function PeithoPage() {
           <section className="lg:col-span-5 flex flex-col gap-4">
             {/* PRANE-X Action Card */}
             <div className="neo-card p-5 bg-white relative overflow-hidden">
-              <div className="text-[11px] font-heading font-black text-neo-navy/60 uppercase tracking-widest mb-1">
-                ENGINE RECOMMENDATION
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="text-[11px] font-heading font-black text-neo-navy/60 uppercase tracking-widest">
+                  ENGINE RECOMMENDATION
+                </div>
+
+                {advisory && (
+                  <span
+                    className={`px-2 py-0.5 text-[10px] font-heading font-black border rounded flex items-center gap-1 transition-all ${
+                      advisory.source === 'ai'
+                        ? 'bg-purple-100 text-purple-900 border-purple-300'
+                        : 'bg-amber-100 text-amber-900 border-amber-300'
+                    }`}
+                  >
+                    {advisory.source === 'ai' ? (
+                      <>
+                        <Sparkles className="w-3 h-3 text-purple-600" />
+                        AI INTEL
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-3 h-3 text-amber-600" />
+                        INSTANT TEMPLATE
+                      </>
+                    )}
+                  </span>
+                )}
               </div>
 
               {advisory ? (
                 <>
-                  <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
                     <div
                       className={`text-lg sm:text-xl font-heading font-black px-3 py-1 border-[3px] border-neo-navy shadow-[3px_3px_0px_#001524] uppercase ${
                         advisory.action === 'ACCEPT'
@@ -593,6 +633,21 @@ export default function PeithoPage() {
                       </div>
                     </div>
                   </div>
+
+                  {advisory.timing && (
+                    <div className="flex flex-wrap items-center gap-1.5 mb-3 text-[10px] font-mono text-gray-500">
+                      {advisory.timing.t2_to_t5_ms !== undefined && (
+                        <span className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
+                          ⚡ Card: {advisory.timing.t2_to_t5_ms}ms
+                        </span>
+                      )}
+                      {advisory.timing.t2_to_t7_ms !== undefined && (
+                        <span className="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded border border-purple-200">
+                          ✨ AI: {advisory.timing.t2_to_t7_ms}ms
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   <p className="text-xs text-neo-navy/80 bg-neo-cream p-2.5 border-2 border-neo-navy rounded font-medium mb-4">
                     💡 <strong>Strategy Rationale:</strong> {advisory.reasoning}

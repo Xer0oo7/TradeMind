@@ -38,6 +38,10 @@ class PeithoSessionConfig(BaseModel):
         default=None,
         description="STT provider override ('typed' or 'elevenlabs')",
     )
+    language: Optional[str] = Field(
+        default=None,
+        description="STT language code override (e.g. 'en', 'hi', or 'auto')",
+    )
 
 
 class TranscriptLine(BaseModel):
@@ -77,6 +81,18 @@ class AdvisoryResult(BaseModel):
     )
     metrics: AdvisoryMetrics
     timestamp: float = Field(default_factory=time.time)
+    recommendation_id: Optional[str] = Field(
+        default=None,
+        description="Unique identifier for this recommendation turn",
+    )
+    source: Literal["template", "ai"] = Field(
+        default="template",
+        description="Source of tactical responses: 'template' (Stage 1) or 'ai' (Stage 2)",
+    )
+    timing: Optional[Dict[str, float]] = Field(
+        default=None,
+        description="Content-free millisecond timing markers for the turn",
+    )
 
 
 @dataclass
