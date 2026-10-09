@@ -1,9 +1,13 @@
-﻿import { useState, useEffect, useRef } from 'react';
-import { Send, Loader2, AlertCircle, TrendingUp, RotateCcw, Plus, Minus, Zap, Shield, Phone, X, CheckCircle, Package, Search, ChevronDown, Database, Edit3, PhoneCall } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Send, Loader2, AlertCircle, TrendingUp, TrendingDown, RotateCcw, Plus, Minus, Zap, Shield, Phone, X, CheckCircle, Package, Search, ChevronDown, Database, Edit3, PhoneCall } from 'lucide-react';
 import { createSession, sendChat, healthCheck, dbStartSession, dbSaveMessage, dbCloseSession, dbSaveCallbackRequest } from './api';
 import { getProducts } from '../../lib/productStore';
 import { VoiceCall } from '../../call-feature';
+import { formatMoney } from '../../lib/formatters';
+import { getMarketComparison } from '../../lib/api';
 import './Chat.css';
+
+const MarketDock = React.lazy(() => import('../../components/market/MarketDock'));
 
 export default function Chat() {
     // Setup config
@@ -16,10 +20,11 @@ export default function Chat() {
     const [showProductDropdown, setShowProductDropdown] = useState(false);
     const productDropdownRef = useRef(null);
     const [config, setConfig] = useState({
+        productName: 'Sony WH-1000XM5',
         mode: 'MAX_PROFIT',
         maxRounds: 10,
-        basePrice: 100,
-        costPrice: 40,
+        basePrice: 2499,
+        costPrice: 1500,
         quantity: 1,
     });
 
@@ -44,6 +49,8 @@ export default function Chat() {
     const [callbackSaving, setCallbackSaving] = useState(false);
     const [finalNegotiationStatus, setFinalNegotiationStatus] = useState(null);
     const [finalDealPrice, setFinalDealPrice] = useState(null);
+    const [autoExpandSignal, setAutoExpandSignal] = useState(false);
+    const productCurrency = selectedProduct?.currency || 'INR';
 
     // Voice call state
     const [showVoiceCall, setShowVoiceCall] = useState(false);
@@ -109,7 +116,7 @@ export default function Chat() {
         setLoading(true);
         setError(null);
 
-        const productName = selectedProduct ? selectedProduct.name : 'Custom Product';
+        const productName = selectedProduct ? selectedProduct.name : (config.productName?.trim() || 'Wireless Earbuds');
         const productId = selectedProduct ? String(selectedProduct.id) : 'TRADE-001';
         const minAcceptable = selectedProduct ? selectedProduct.minAcceptablePrice : config.costPrice;
         const maxLoss = selectedProduct ? (selectedProduct.maxLossPercent || 0) : 0;
@@ -144,6 +151,20 @@ export default function Chat() {
                 setError('Backend not available. Start the server first.');
                 setLoading(false);
                 return;
+            }
+
+            // Trigger live web scraping so competitor data is updated before negotiation starts
+            try {
+                await getMarketComparison(
+                    productId,
+                    5,
+                    productName,
+                    config.basePrice,
+                    productCurrency,
+                    true
+                );
+            } catch (marketErr) {
+                console.warn('[Market] Live scrape prefetch notice:', marketErr);
             }
 
             const sessionData = await createSession(sessionConfig);
@@ -336,6 +357,13 @@ export default function Chat() {
                                 : m
                         ));
                     }
+                    
+                    if (response.competitor_price_claim || 
+                        userText.toLowerCase().includes('too expensive') || 
+                        userText.toLowerCase().includes('too high') || 
+                        userText.toLowerCase().includes('cheaper')) {
+                        setAutoExpandSignal(Date.now());
+                    }
                 }
 
                 const botMessage = {
@@ -439,7 +467,7 @@ export default function Chat() {
         const isDbMode = configSource === 'database';
         const canStart = isDbMode
             ? (selectedProduct && backendHealthy === true)
-            : (config.basePrice > 0 && config.costPrice > 0 && config.costPrice < config.basePrice && backendHealthy === true);
+            : (config.productName?.trim() && config.basePrice > 0 && config.costPrice > 0 && config.costPrice < config.basePrice && backendHealthy === true);
 
         return (
             <div className="min-h-screen bg-neo-cream flex items-center justify-center p-4">
@@ -537,8 +565,8 @@ export default function Chat() {
                                                                 </p>
                                                             </div>
                                                             <div className="text-right">
-                                                                <p className="font-bold text-neo-teal text-sm">${p.basePrice.toFixed(2)}</p>
-                                                                <p className="text-xs text-neo-navy/40">Cost: ${p.costPrice.toFixed(2)}</p>
+                                                                <p className="font-bold text-neo-teal text-sm">{formatMoney(p.basePrice, p.currency || 'INR')}</p>
+                                                                <p className="text-xs text-neo-navy/40">Cost: {formatMoney(p.costPrice, p.currency || 'INR')}</p>
                                                             </div>
                                                         </div>
                                                     </button>
@@ -557,7 +585,7 @@ export default function Chat() {
                                                 {selectedProduct.name}
                                             </h3>
                                             <button
-                                                onClick={() => { setSelectedProduct(null); setConfig({ mode: 'MAX_PROFIT', maxRounds: 10, basePrice: 100, costPrice: 40 }); }}
+                                                onClick={() => { setSelectedProduct(null); setConfig({ productName: 'Sony WH-1000XM5', mode: 'MAX_PROFIT', maxRounds: 10, basePrice: 2499, costPrice: 1500 }); }}
                                                 className="text-neo-navy/40 hover:text-neo-maroon transition-colors"
                                             >
                                                 <X className="w-4 h-4" />
@@ -566,15 +594,15 @@ export default function Chat() {
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="border-2 border-neo-navy/20 p-2 bg-white">
                                                 <p className="text-[10px] font-bold text-neo-navy/50 uppercase tracking-widest">Base Price</p>
-                                                <p className="text-lg font-bold text-neo-navy">${selectedProduct.basePrice.toFixed(2)}</p>
+                                                <p className="text-lg font-bold text-neo-navy">{formatMoney(selectedProduct.basePrice, selectedProduct.currency || 'INR')}</p>
                                             </div>
                                             <div className="border-2 border-neo-navy/20 p-2 bg-white">
                                                 <p className="text-[10px] font-bold text-neo-navy/50 uppercase tracking-widest">Cost Price</p>
-                                                <p className="text-lg font-bold text-neo-navy">${selectedProduct.costPrice.toFixed(2)}</p>
+                                                <p className="text-lg font-bold text-neo-navy">{formatMoney(selectedProduct.costPrice, selectedProduct.currency || 'INR')}</p>
                                             </div>
                                             <div className="border-2 border-neo-navy/20 p-2 bg-white">
                                                 <p className="text-[10px] font-bold text-neo-navy/50 uppercase tracking-widest">Min Acceptable</p>
-                                                <p className="text-lg font-bold text-neo-navy">${selectedProduct.minAcceptablePrice.toFixed(2)}</p>
+                                                <p className="text-lg font-bold text-neo-navy">{formatMoney(selectedProduct.minAcceptablePrice, selectedProduct.currency || 'INR')}</p>
                                             </div>
                                             <div className="border-2 border-neo-navy/20 p-2 bg-white">
                                                 <p className="text-[10px] font-bold text-neo-navy/50 uppercase tracking-widest">Margin</p>
@@ -594,6 +622,15 @@ export default function Chat() {
                                                 {selectedProduct.category}
                                             </span>
                                         </div>
+                                        <div className="mt-2 pt-2 border-t-2 border-neo-navy/10 flex items-center justify-between text-xs font-bold text-neo-teal">
+                                            <span className="flex items-center gap-1.5">
+                                                <TrendingDown className="w-4 h-4 text-neo-orange animate-pulse" />
+                                                Market Price Bubbles
+                                            </span>
+                                            <span className="bg-neo-navy text-neo-cream text-[10px] font-black px-2 py-0.5 border border-neo-navy uppercase">
+                                                Active Beside Chat
+                                            </span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -602,6 +639,26 @@ export default function Chat() {
                         {/* ── Manual Entry Fields ── */}
                         {!isDbMode && (
                             <>
+                                {/* Product Name */}
+                                <div>
+                                    <label className="text-xs font-bold text-neo-navy/60 mb-2 block uppercase tracking-widest">Product Name</label>
+                                    <div className="flex items-center border-3 border-neo-navy bg-white">
+                                        <span className="px-3 py-2.5 bg-neo-navy text-neo-cream font-bold">
+                                            <Package className="w-5 h-5" />
+                                        </span>
+                                        <input
+                                            type="text"
+                                            value={config.productName || ''}
+                                            onChange={(e) => setConfig({ ...config, productName: e.target.value })}
+                                            placeholder="e.g. Logitech MX Master 3S, Sony WH-1000XM5..."
+                                            className="flex-1 px-3 py-2.5 bg-transparent text-neo-navy font-bold text-base focus:outline-none"
+                                        />
+                                    </div>
+                                    <p className="text-[11px] font-semibold text-neo-teal mt-1">
+                                        TradeMind will scrape live competitor prices from Amazon and Flipkart for this product.
+                                    </p>
+                                </div>
+
                                 {/* Mode Toggle */}
                                 <div>
                                     <label className="text-xs font-bold text-neo-navy/60 mb-2 block uppercase tracking-widest">Strategy Mode</label>
@@ -671,7 +728,7 @@ export default function Chat() {
                                 <div>
                                     <label className="text-xs font-bold text-neo-navy/60 mb-2 block uppercase tracking-widest">Base Price (Selling Price)</label>
                                     <div className="flex items-center border-3 border-neo-navy overflow-hidden">
-                                        <span className="px-3 py-2.5 bg-neo-navy text-neo-cream font-bold text-lg">$</span>
+                                        <span className="px-3 py-2.5 bg-neo-navy text-neo-cream font-bold text-lg">₹</span>
                                         <input
                                             type="number"
                                             value={config.basePrice}
@@ -687,7 +744,7 @@ export default function Chat() {
                                 <div>
                                     <label className="text-xs font-bold text-neo-navy/60 mb-2 block uppercase tracking-widest">Actual Cost Price</label>
                                     <div className="flex items-center border-3 border-neo-navy overflow-hidden">
-                                        <span className="px-3 py-2.5 bg-neo-navy text-neo-cream font-bold text-lg">$</span>
+                                        <span className="px-3 py-2.5 bg-neo-navy text-neo-cream font-bold text-lg">₹</span>
                                         <input
                                             type="number"
                                             value={config.costPrice}
@@ -725,7 +782,7 @@ export default function Chat() {
                             className={"w-full py-4 border-3 border-neo-navy font-bold text-lg flex items-center justify-center gap-2 transition-all " + (loading || !canStart ? 'bg-neo-navy/20 text-neo-navy/40 cursor-not-allowed' : 'bg-neo-orange text-neo-navy shadow-neo hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px]')}
                         >
                             {loading ? (
-                                <><Loader2 className="w-5 h-5 animate-spin" /> Creating Session...</>
+                                <><Loader2 className="w-5 h-5 animate-spin" /> Scraping Live Market & Starting...</>
                             ) : (
                                 <><TrendingUp className="w-5 h-5" /> Start Negotiation</>
                             )}
@@ -748,8 +805,8 @@ export default function Chat() {
     return (
         <div className="min-h-screen bg-neo-cream flex flex-col">
             <header className="bg-neo-navy text-neo-cream border-b-4 border-neo-navy p-4">
-                <div className="max-w-4xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 shrink-0 whitespace-nowrap">
                         <div className="w-10 h-10 bg-neo-orange flex items-center justify-center border-2 border-neo-cream">
                             <TrendingUp className="w-6 h-6 text-neo-navy" />
                         </div>
@@ -758,29 +815,32 @@ export default function Chat() {
                             <p className="text-sm text-neo-cream/70">AI Negotiation Engine</p>
                         </div>
                     </div>
-                    <div className="hidden sm:flex flex-wrap items-center gap-2">
+                    <div className="hidden sm:flex flex-wrap items-center justify-end gap-2 min-w-0">
                         {selectedProduct && (
-                            <span className="bg-neo-orange px-3 py-1 border-2 border-neo-cream font-bold text-xs text-neo-navy">
+                            <span 
+                                className="bg-neo-orange px-3 py-1 border-2 border-neo-cream font-bold text-xs text-neo-navy max-w-[200px] sm:max-w-[260px] md:max-w-[320px] truncate block"
+                                title={selectedProduct.name}
+                            >
                                 {selectedProduct.name}
                             </span>
                         )}
-                        <span className="bg-neo-teal px-3 py-1 border-2 border-neo-cream font-bold text-xs">
+                        <span className="bg-neo-teal px-3 py-1 border-2 border-neo-cream font-bold text-xs whitespace-nowrap">
                             {config.mode === 'MAX_PROFIT' ? 'MAX PROFIT' : 'MIN LOSS'}
                         </span>
-                        <span className="bg-neo-teal px-3 py-1 border-2 border-neo-cream font-bold text-xs">
+                        <span className="bg-neo-teal px-3 py-1 border-2 border-neo-cream font-bold text-xs whitespace-nowrap">
                             {config.maxRounds} Rounds
                         </span>
-                        <span className="bg-neo-teal px-3 py-1 border-2 border-neo-cream font-bold text-xs">
-                            Base ${config.basePrice}
+                        <span className="bg-neo-teal px-3 py-1 border-2 border-neo-cream font-bold text-xs whitespace-nowrap">
+                            Base {formatMoney(config.basePrice, productCurrency)}
                         </span>
-                        <span className="bg-neo-teal px-3 py-1 border-2 border-neo-cream font-bold text-xs">
-                            Cost ${config.costPrice}
+                        <span className="bg-neo-teal px-3 py-1 border-2 border-neo-cream font-bold text-xs whitespace-nowrap">
+                            Cost {formatMoney(config.costPrice, productCurrency)}
                         </span>
                         {/* Voice Call Button in Header */}
                         {sessionId && !negotiationEnded && (
                             <button
                                 onClick={() => setShowVoiceCall(true)}
-                                className="flex items-center gap-1.5 bg-neo-orange px-3 py-1 border-2 border-neo-cream font-bold text-xs text-neo-navy hover:bg-neo-orange/80 transition-all"
+                                className="flex items-center gap-1.5 bg-neo-orange px-3 py-1 border-2 border-neo-cream font-bold text-xs text-neo-navy hover:bg-neo-orange/80 transition-all shrink-0"
                                 title="Start voice negotiation"
                             >
                                 <PhoneCall className="w-3.5 h-3.5" />
@@ -851,12 +911,12 @@ export default function Chat() {
                                         </span>
                                         {msg.meta?.round && (
                                             <span className="text-xs opacity-70">
-                                                Round {msg.meta.round} \u2022 {msg.meta.roundsRemaining} left
+                                                Round {msg.meta.round} • {msg.meta.roundsRemaining} left
                                             </span>
                                         )}
                                         {msg.meta?.offeredPrice && (
                                             <span className="text-xs font-bold opacity-90">
-                                                ${msg.meta.offeredPrice.toFixed(2)}
+                                                {formatMoney(msg.meta.offeredPrice, productCurrency)}
                                             </span>
                                         )}
                                     </div>
@@ -986,13 +1046,23 @@ export default function Chat() {
 
             {!negotiationEnded && (
                 <footer className="bg-neo-cream border-t-4 border-neo-navy p-4">
-                    <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto">
+                    <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto relative">
+                        {/* Market Dock positioned at bottom-full end-0 mb-4 */}
+                        <React.Suspense fallback={null}>
+                            <MarketDock 
+                                productId={selectedProduct ? String(selectedProduct.id) : 'TRADE-001'}
+                                productName={selectedProduct ? selectedProduct.name : (config.productName || 'Wireless Earbuds')}
+                                currency={productCurrency}
+                                ourPrice={config.basePrice}
+                                autoExpandSignal={autoExpandSignal} 
+                            />
+                        </React.Suspense>
                         <div className="flex gap-3">
                             <input
                                 type="text"
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
-                                placeholder='Type anything \u2014 "hello", "why so expensive?", "I offer $70"...'
+                                placeholder={'Type anything — "hello", "why so expensive?", "I offer ₹70"...'}
                                 className="flex-1 px-4 py-3 border-3 border-neo-navy bg-white text-neo-navy placeholder-neo-navy/50 focus:outline-none font-body"
                                 disabled={loading || !sessionId}
                             />

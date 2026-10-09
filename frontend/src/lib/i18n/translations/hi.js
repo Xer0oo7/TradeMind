@@ -424,6 +424,27 @@ const hi = {
     alertBanner: {
         message: '⚠️ हम भी आपकी रिपोर्ट नहीं पढ़ सकते • पूरी तरह एन्क्रिप्टेड • डिज़ाइन से गुमनाम • ',
     },
+
+    // Market Dock
+    market: {
+        market: 'बाज़ार',
+        marketCheck: 'बाज़ार जाँच',
+        upToLower: '{percent}% तक कम',
+        lowerThanSource: '{source} से {percent}% कम',
+        belowSource: '{source} से {amount} कम',
+        sampleData: 'नमूना डेटा',
+        liveCheckedAgo: 'लाइव · {time} पहले जाँचा गया',
+        demoNote: 'डेमो अनुमान। रिटेलर खोजने के लिए पंक्ति पर टैप करें।',
+        liveNote: 'सार्वजनिक लिस्टिंग से कीमतें',
+        searchOn: '{retailer} पर खोजें',
+        viewListing: 'लिस्टिंग देखें',
+        minutesAgo: '{count} मिनट',
+        hoursAgo: '{count} घंटे',
+        refresh: 'रिफ्रेश',
+        close: 'बंद करें',
+        cheaperThanMarket: 'बाज़ार से {count} सस्ता',
+    }
 };
 
 export default hi;
+

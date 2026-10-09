@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     sarvam_tts_speaker: str = "Shubh"
     sarvam_language: str = "en-IN"
     
+    # Market Comparison
+    serp_api_key: str = ""
+    market_sources: str = "html,seeded"  # comma-sep: serp,html,seeded
+    comparison_mode: str = "we_are_cheaper"  # only show cheaper-than-market items
+    market_comparison_ttl: int = 21600  # 6 hours in seconds
+    market_allowed_domains: str = "amazon.in,flipkart.com,croma.com"  # for HTML scraper
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

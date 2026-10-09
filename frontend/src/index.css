@@ -222,3 +222,68 @@
   animation: fadeIn 0.3s ease-out forwards;
 }
 
+/* Market Dock Animations */
+@keyframes dock-popover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dock-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dock-pulse-twice {
+  0% { box-shadow: 0 0 0 0 rgba(255, 125, 0, 0.7); }
+  50% { box-shadow: 0 0 0 10px rgba(255, 125, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 125, 0, 0); }
+}
+
+.animate-dock-popover {
+  animation: dock-popover-in 160ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: bottom right;
+}
+
+.animate-dock-row {
+  animation: dock-row-in 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-dock-pulse-twice {
+  animation: dock-pulse-twice 0.8s ease-out 2;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(0,21,36,0.9) 25%, rgba(21,97,109,0.7) 50%, rgba(0,21,36,0.9) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-dock-popover,
+  .animate-dock-row,
+  .animate-dock-pulse-twice,
+  .animate-shimmer {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+

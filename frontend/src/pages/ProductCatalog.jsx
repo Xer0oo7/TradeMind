@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Package, Plus, Pencil, Trash2, Upload, X, Search,
     DollarSign, TrendingUp, TrendingDown, Settings, AlertCircle, Check,
@@ -13,6 +13,8 @@ import {
     getProducts, createProduct, updateProduct, deleteProduct, importFromCSV,
     getProductStats
 } from '../lib/productStore';
+
+const MarketBubbles = React.lazy(() => import('../components/market/MarketBubbles'));
 
 // ── Opportunity Score Calculation ──────────────────────────────────────────
 // Composite score (0-100) based on product profitability, pricing position,
@@ -87,6 +89,7 @@ export default function ProductCatalog() {
     const [liveStats, setLiveStats] = useState(null);
     const [statsLoading, setStatsLoading] = useState(false);
     const [scoreDetailOpen, setScoreDetailOpen] = useState(null); // product id
+    const [selectedProductId, setSelectedProductId] = useState(null);
 
     // Sort state for table
     const [sortField, setSortField] = useState('name');
@@ -100,6 +103,12 @@ export default function ProductCatalog() {
     const [formError, setFormError] = useState('');
 
     useEffect(() => { reload(); }, []);
+    
+    useEffect(() => {
+        if (products.length > 0 && !selectedProductId) {
+            setSelectedProductId(products[0].id);
+        }
+    }, [products, selectedProductId]);
 
     // Close modal on Escape key
     useEffect(() => {
@@ -251,6 +260,16 @@ export default function ProductCatalog() {
 
     return (
         <Layout>
+            <React.Suspense fallback={null}>
+                {selectedProductId && (
+                    <MarketBubbles 
+                        productId={selectedProductId}
+                        productName={products.find(p => String(p.id) === String(selectedProductId))?.name}
+                        ourPrice={products.find(p => String(p.id) === String(selectedProductId))?.basePrice}
+                        currency={products.find(p => String(p.id) === String(selectedProductId))?.currency || 'INR'}
+                    />
+                )}
+            </React.Suspense>
             {/* Hero Header — same pattern as JuryDashboard */}
             <section className="bg-neo-navy py-6 sm:py-12 border-b-[4px] border-neo-navy">
                 <div className="container mx-auto px-4">
@@ -461,7 +480,11 @@ export default function ProductCatalog() {
                             {filteredProducts.map((product) => (
                                 <NeoCard key={product.id} className="overflow-hidden">
                                     {/* Card Header */}
-                                    <div className="p-4 border-b-[3px] border-neo-navy bg-neo-navy flex items-center justify-between">
+                                    <div 
+                                        className="p-4 border-b-[3px] border-neo-navy bg-neo-navy flex items-center justify-between cursor-pointer"
+                                        onMouseEnter={() => setSelectedProductId(product.id)}
+                                        onClick={() => setSelectedProductId(product.id)}
+                                    >
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 bg-neo-orange flex items-center justify-center">
                                                 <Package className="w-5 h-5 text-neo-navy" />
