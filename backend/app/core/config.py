@@ -55,6 +55,12 @@ class Settings(BaseSettings):
     sarvam_tts_speaker: str = "Shubh"
     sarvam_language: str = "en-IN"
     
+    # Peitho Live Assistant (STT & Copilot)
+    peitho_stt_provider: str = "typed"  # "elevenlabs" | "typed"
+    elevenlabs_api_key: str = ""        # ElevenLabs Scribe API key (set in .env later)
+    elevenlabs_stt_model: str = "scribe_v2_realtime"
+    elevenlabs_language: str = "en"
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

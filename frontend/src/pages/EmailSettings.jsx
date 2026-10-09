@@ -11,7 +11,7 @@ export default function EmailSettings() {
     smtp_user: '',
     smtp_password: '',
     from_email: '',
-    from_name: 'TradeMind',
+    from_name: 'Peitho',
     use_tls: true,
     notifications_enabled: true,
     notify_on_deal: true,
@@ -39,7 +39,7 @@ export default function EmailSettings() {
         smtp_user: data.smtp_user || '',
         smtp_password: data.smtp_password || '',
         from_email: data.from_email || '',
-        from_name: data.from_name || 'TradeMind',
+        from_name: data.from_name || 'Peitho',
         use_tls: data.use_tls ?? true,
         notifications_enabled: data.notifications_enabled ?? true,
         notify_on_deal: data.notify_on_deal ?? true,
@@ -216,7 +216,7 @@ export default function EmailSettings() {
                         value={settings.from_name}
                         onChange={e => updateField('from_name', e.target.value)}
                         className="w-full border-[3px] border-neo-navy px-3 py-2 text-sm focus:outline-none focus:border-neo-teal"
-                        placeholder="TradeMind"
+                        placeholder="Peitho"
                       />
                     </div>
                   </div>

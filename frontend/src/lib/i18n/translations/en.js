@@ -1,4 +1,4 @@
-// English translations for Trade Mind
+// English translations for Peitho
 const en = {
     // Common
     common: {
@@ -58,7 +58,7 @@ const en = {
     // Landing Page
     landing: {
         badge: 'Profit-Aware AI',
-        tradeMind: 'TRADE MIND',
+        tradeMind: 'PEITHO',
         tagline: 'Smart Negotiations. Better Margins.',
         description: 'AI-powered pricing that maximizes profit while respecting your business rules. No random discounts. Just smart business logic.',
         notAChatbot: 'Intelligent. Profitable. Real.',
@@ -66,7 +66,7 @@ const en = {
         viewApiDocs: 'View API Docs',
         startReporting: 'Buy Access',
         whatsApp: 'Try Our Chat',
-        secureReport: 'TRADE MIND',
+        secureReport: 'PEITHO',
 
         // Stats
         stats: {
@@ -78,7 +78,7 @@ const en = {
 
         // Role Cards (now Feature Cards)
         roleCards: {
-            chooseYourPath: 'What Trade Mind Does',
+            chooseYourPath: 'What Peitho Does',
             threeRolesOneMission: 'Intelligent Negotiation Infrastructure',
             enterDashboard: 'Learn More',
             reporter: {
@@ -99,7 +99,7 @@ const en = {
         features: {
             securityFirst: 'Built for Developers',
             builtForZeroTrust: 'API-First Architecture',
-            privacyPriority: 'Every layer of Trade Mind is designed for seamless integration and full auditability.',
+            privacyPriority: 'Every layer of Peitho is designed for seamless integration and full auditability.',
             clientSideEncryption: 'API-First SaaS',
             clientSideEncryptionDesc: 'RESTful API with session-based negotiation. Easy integration with any platform.',
             sessionBasedIdentity: 'Multi-Agent Architecture',
@@ -117,7 +117,7 @@ const en = {
             step1Title: 'You Define the Rules',
             step1Desc: 'Set base price, cost price, minimum acceptable price, inventory pressure, and mode. These rules never change mid-negotiation.',
             step2Title: 'Buyers Negotiate',
-            step2Desc: 'Buyers send offers through chat widgets, e-commerce platforms, or direct API calls. Trade Mind handles multi-round negotiations.',
+            step2Desc: 'Buyers send offers through chat widgets, e-commerce platforms, or direct API calls. Peitho handles multi-round negotiations.',
             step3Title: 'AI Decides (Deterministically)',
             step3Desc: 'Context Agent sets strategy. Pricing Agent decides accept/counter/reject. Conversation Agent explains decisions. LLMs never decide prices.',
             step4Title: 'You See the Outcome',
@@ -127,15 +127,15 @@ const en = {
         // CTA Section
         cta: {
             readyToReport: 'Ready to Negotiate Smarter?',
-            safetyPriority: 'Stop guessing prices. Let Trade Mind handle negotiation — within your rules.',
-            createAnonymousReport: 'Buy Trade Mind Access',
+            safetyPriority: 'Stop guessing prices. Let Peitho handle negotiation — within your rules.',
+            createAnonymousReport: 'Buy Peitho Access',
             authorityLogin: 'Read Documentation',
         },
     },
 
     // Reporter Home (now Dashboard)
     reporterHome: {
-        title: 'Trade Mind Dashboard',
+        title: 'Peitho Dashboard',
         subtitle: 'Active Negotiations & Insights',
         quickActions: 'Quick Actions',
 
@@ -173,8 +173,8 @@ const en = {
         tip3: 'Use MIN_LOSS for clearance inventory',
 
         // Privacy Banner
-        privacyProtected: 'How Trade Mind Works',
-        privacyMessage: 'Trade Mind never invents prices. It never violates constraints. It never chases bad deals. It never discounts blindly. Every decision is deterministic and auditable.',
+        privacyProtected: 'How Peitho Works',
+        privacyMessage: 'Peitho never invents prices. It never violates constraints. It never chases bad deals. It never discounts blindly. Every decision is deterministic and auditable.',
     },
 
     // Report Page (now Create Negotiation)
@@ -428,14 +428,14 @@ const en = {
 
     // Footer
     footer: {
-        description: 'AI Negotiation Engine for Smarter Pricing. Trade Mind negotiates on behalf of sellers while protecting margins.',
+        description: 'AI Negotiation Engine for Smarter Pricing. Peitho negotiates on behalf of sellers while protecting margins.',
         quickLinks: 'Quick Links',
         startReporting: '→ Start Negotiating',
         authorityDashboard: '→ View Dashboard',
         checkReputation: '→ API Documentation',
         disclaimer: 'Disclaimer',
-        disclaimerText: 'Trade Mind is an AI-powered negotiation engine. All pricing decisions are deterministic and based on seller-defined constraints.',
-        copyright: '© 2026 Trade Mind • Intelligent Negotiation Infrastructure',
+        disclaimerText: 'Peitho is an AI-powered negotiation engine. All pricing decisions are deterministic and based on seller-defined constraints.',
+        copyright: '© 2026 Peitho • Intelligent Negotiation Infrastructure',
     },
 
     // Alert Banner

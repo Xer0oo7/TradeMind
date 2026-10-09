@@ -76,9 +76,9 @@ export default function Landing() {
 
               {/* Main Heading */}
               <h1 className="text-5xl sm:text-7xl md:text-9xl font-heading font-bold mb-4 leading-none text-neo-navy">
-                TRADE
+                PEI
                 <span className="block text-neo-orange relative">
-                  MIND
+                  THO
                   <svg className="absolute -bottom-2 left-0 w-full h-4" viewBox="0 0 200 20">
                     <path d="M0 10 Q50 0, 100 10 T200 10" stroke="#FF7D00" strokeWidth="4" fill="none" />
                   </svg>

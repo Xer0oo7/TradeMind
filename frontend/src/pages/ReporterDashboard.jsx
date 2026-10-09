@@ -104,7 +104,7 @@ export default function ReporterDashboard() {
             <div className="w-20 h-20 bg-neo-teal border-[3px] border-neo-navy flex items-center justify-center mx-auto mb-6">
               <TrendingUp className="w-10 h-10 text-neo-cream" />
             </div>
-            <h2 className="text-3xl font-heading font-bold mb-2 text-neo-navy">Welcome to Trade Mind</h2>
+            <h2 className="text-3xl font-heading font-bold mb-2 text-neo-navy">Welcome to Peitho</h2>
             <p className="text-neo-navy/70 mb-6">
               Start your first negotiation session to begin using the AI-powered pricing engine.
             </p>
@@ -113,7 +113,7 @@ export default function ReporterDashboard() {
               <ol className="text-neo-cream/80 text-sm space-y-2">
                 <li>1. Create a new negotiation session</li>
                 <li>2. Define your product and pricing rules</li>
-                <li>3. Let Trade Mind handle negotiations</li>
+                <li>3. Let Peitho handle negotiations</li>
               </ol>
             </NeoCard>
             <Link to="/">

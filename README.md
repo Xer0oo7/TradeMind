@@ -1,6 +1,6 @@
 <div align="center">
 
-# TradeMind — AI-Powered Negotiation Platform
+# Peitho — AI-Powered Negotiation Platform
 
 **A profit-aware, multi-agent negotiation engine with a conversational interface for e-commerce sellers.**
 
@@ -36,15 +36,15 @@
 
 ## Overview
 
-TradeMind is **not** a chatbot. It is a **business decision engine** with a natural language interface.
+Peitho is **not** a chatbot. It is a **business decision engine** with a natural language interface.
 
-Sellers define their product costs, pricing constraints, and negotiation strategy. TradeMind's multi-agent AI system then conducts negotiations with buyers — computing optimal counter-offers, managing concessions, and generating human-like conversational responses — all while **never violating the seller's hard business rules**.
+Sellers define their product costs, pricing constraints, and negotiation strategy. Peitho's multi-agent AI system then conducts negotiations with buyers — computing optimal counter-offers, managing concessions, and generating human-like conversational responses — all while **never violating the seller's hard business rules**.
 
 The platform combines rule-based deterministic pricing logic with LLM-powered intelligence, ensuring that every deal outcome is explainable, auditable, and aligned with the seller's profit objectives.
 
 ### Key Innovation
 
-Unlike traditional chatbots that use LLMs for all decisions, TradeMind separates concerns:
+Unlike traditional chatbots that use LLMs for all decisions, Peitho separates concerns:
 - **Rule Engine**: Handles all numeric/pricing decisions (deterministic, auditable)
 - **LLM**: Generates natural language only (conversational, contextual)
 - **Validator**: Ensures LLM output never contradicts business rules
