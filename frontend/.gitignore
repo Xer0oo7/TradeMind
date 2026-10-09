@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .env
+.env.local
 .cursorignore
 
 # Editor directories and files

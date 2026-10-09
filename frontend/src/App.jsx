@@ -18,6 +18,8 @@ import ApiAccess from './pages/ApiAccess';
 import EmailSettings from './pages/EmailSettings';
 import Chat from './test-chat/src/Chat';
 import ProtectedRoute from './components/ProtectedRoute';
+import BuyerChatRoom from './pages/BuyerChatRoom';
+import LiveChatPage from './pages/LiveChatPage';
 
 function App() {
   return (
@@ -66,6 +68,10 @@ function App() {
 
             {/* Chat / Negotiation Demo */}
             <Route path="/chat" element={<Chat />} />
+
+            {/* Live Chat & Negotiation Room */}
+            <Route path="/join/:token" element={<BuyerChatRoom />} />
+            <Route path="/live/:token" element={<ProtectedRoute><LiveChatPage /></ProtectedRoute>} />
 
             {/* 404 Catch-all */}
             <Route path="*" element={

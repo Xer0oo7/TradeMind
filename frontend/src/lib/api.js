@@ -361,3 +361,131 @@ export async function sendTestEmail(toEmail = null) {
   return response.json();
 }
 
+// ============================================================
+// Assist & Live Meetings API
+// ============================================================
+
+export async function getAssist(payload) {
+  const token = getAuthToken();
+  const response = await fetch(`${AUTH_API_URL}/api/v1/negotiate/assist`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Assist request failed' }));
+    throw new Error(err.detail || 'Assist request failed');
+  }
+  return response.json();
+}
+
+export async function createMeeting(data) {
+  const token = getAuthToken();
+  const response = await fetch(`${AUTH_API_URL}/api/v1/meetings`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Failed to create meeting' }));
+    throw new Error(err.detail || 'Failed to create meeting');
+  }
+  return response.json();
+}
+
+export async function listMeetings(status = null) {
+  const token = getAuthToken();
+  const url = status
+    ? `${AUTH_API_URL}/api/v1/meetings?status=${encodeURIComponent(status)}`
+    : `${AUTH_API_URL}/api/v1/meetings`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Failed to list meetings' }));
+    throw new Error(err.detail || 'Failed to list meetings');
+  }
+  return response.json();
+}
+
+export async function getMeetingByToken(meetingToken) {
+  const token = getAuthToken();
+  const response = await fetch(`${AUTH_API_URL}/api/v1/meetings/by-token/${meetingToken}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Failed to get meeting' }));
+    throw new Error(err.detail || 'Failed to get meeting');
+  }
+  return response.json();
+}
+
+export async function patchMeeting(meetingId, data) {
+  const token = getAuthToken();
+  const response = await fetch(`${AUTH_API_URL}/api/v1/meetings/${meetingId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Failed to update meeting' }));
+    throw new Error(err.detail || 'Failed to update meeting');
+  }
+  return response.json();
+}
+
+export async function startMeeting(meetingId) {
+  const token = getAuthToken();
+  const response = await fetch(`${AUTH_API_URL}/api/v1/meetings/${meetingId}/start`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Failed to start meeting' }));
+    throw new Error(err.detail || 'Failed to start meeting');
+  }
+  return response.json();
+}
+
+export async function endMeeting(meetingId, data = {}) {
+  const token = getAuthToken();
+  const response = await fetch(`${AUTH_API_URL}/api/v1/meetings/${meetingId}/end`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Failed to end meeting' }));
+    throw new Error(err.detail || 'Failed to end meeting');
+  }
+  return response.json();
+}
+
+export async function patchCallbackStatus(cbId, status) {
+  const token = getAuthToken();
+  const response = await fetch(`${AUTH_API_URL}/api/v1/chat-sessions/callback-requests/${cbId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Failed to update callback status' }));
+    throw new Error(err.detail || 'Failed to update callback status');
+  }
+  return response.json();
+}
