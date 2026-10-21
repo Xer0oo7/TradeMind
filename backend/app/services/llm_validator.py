@@ -154,10 +154,10 @@ class LLMValidator:
     
     def _extract_prices(self, text: str) -> List[Decimal]:
         """Extract all dollar amounts from text."""
-        # Match patterns like $95.50, $100, $1,234.56
+        # Match patterns like ₹95.50, $100, 100 rupees
         patterns = [
-            r'\$[\d,]+\.?\d*',          # $100, $95.50, $1,234.56
-            r'[\d,]+\.?\d*\s*dollars?',  # 100 dollars
+            r'[$₹][\d,]+\.?\d*',          # ₹100, $100, ₹95.50, 1,234.56
+            r'[\d,]+\.?\d*\s*(?:rupees?|rs\.?|inr|dollars?)',  # 100 rupees, 100 dollars
             r'[\d,]+\.\d{2}\b',          # 95.50 (2 decimal places, likely price)
         ]
         
@@ -231,7 +231,7 @@ class LLMValidator:
                 range_high = max_allowed * Decimal("2.0")
                 if range_low <= price <= range_high:
                     violations.append(
-                        f"invented_price: ${price} not in allowed {[str(p) for p in allowed_prices]}"
+                        f"invented_price: ₹{price} not in allowed {[str(p) for p in allowed_prices]}"
                     )
                 else:
                     logger.debug("allowing_contextual_number", price=str(price))

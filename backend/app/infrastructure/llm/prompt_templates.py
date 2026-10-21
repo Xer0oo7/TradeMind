@@ -44,10 +44,10 @@ def build_initial_offer_prompt(
 
 DETAILS:
 - Product: {product_name} ({quantity} units)
-- Your opening price: ${offer_price} per unit
+- Your opening price: ₹{offer_price} per unit
 - Mode: {mode}
 
-Make it feel like a natural conversation starter. Mention the product, the price ${offer_price}, and the quantity. Be welcoming and confident — you’re excited to work with this buyer. 1-2 sentences, casual and professional.
+Make it feel like a natural conversation starter. Mention the product, the price ₹{offer_price}, and the quantity. Be welcoming and confident — you’re excited to work with this buyer. 1-2 sentences, casual and professional.
 
 Generate your opening:"""
 
@@ -65,7 +65,7 @@ def build_accept_prompt(
     if quantity > 1:
         try:
             total = float(accepted_price) * quantity
-            total_note = f"- Total for {quantity} units: ${total:.2f}\n"
+            total_note = f"- Total for {quantity} units: ₹{total:.2f}\n"
             total_rule = f"- Since quantity is {quantity}, mention both the per-unit price AND the total.\n"
         except (ValueError, TypeError):
             pass
@@ -74,11 +74,11 @@ def build_accept_prompt(
 CONTEXT:
 - Product: {product_name}
 - Quantity: {quantity} unit(s)
-- Accepted price: ${accepted_price} per unit
+- Accepted price: ₹{accepted_price} per unit
 {total_note}- This is round {round_number} of {max_rounds}
 
 RULES:
-- You MUST confirm the exact price ${accepted_price} per unit
+- You MUST confirm the exact price ₹{accepted_price} per unit
 {total_rule}- Express genuine satisfaction with the deal
 - Keep it 1-2 sentences
 - Be warm but professional
@@ -107,7 +107,7 @@ def build_counter_prompt(
     
     violation_note = ""
     if is_constraint_violation:
-        violation_note = f"The buyer's offer of ${buyer_offered} was way too low. Be clear that this price doesn't work, but do NOT reveal our minimum — instead, explain WHY the product is worth more. Sell the value."
+        violation_note = f"The buyer's offer of ₹{buyer_offered} was way too low. Be clear that this price doesn't work, but do NOT reveal our minimum — instead, explain WHY the product is worth more. Sell the value."
     
     buyer_context = ""
     if buyer_message:
@@ -121,8 +121,8 @@ def build_counter_prompt(
             buyer_total = float(buyer_offered) * quantity
             our_total = float(our_counter) * quantity
             total_note = (
-                f"- Buyer total for {quantity} units: ${buyer_total:.2f}\n"
-                f"- Our counter total for {quantity} units: ${our_total:.2f}\n"
+                f"- Buyer total for {quantity} units: ₹{buyer_total:.2f}\n"
+                f"- Our counter total for {quantity} units: ₹{our_total:.2f}\n"
             )
         except (ValueError, TypeError):
             total_note = ""
@@ -136,8 +136,8 @@ def build_counter_prompt(
 CONTEXT:
 - Product: {product_name}
 - Quantity: {quantity} unit(s)
-- Buyer offered: ${buyer_offered} per unit
-- Our counter-offer: ${our_counter} per unit
+- Buyer offered: ₹{buyer_offered} per unit
+- Our counter-offer: ₹{our_counter} per unit
 {total_note}- Round: {round_number} of {max_rounds} (phase: {phase})
 - Mode: {mode}
 - Concession budget used: {concession_pct_used}%
@@ -145,8 +145,8 @@ CONTEXT:
 {violation_note}
 
 RULES:
-- You MUST reference the buyer's price of ${buyer_offered}
-- You MUST state our counter-offer of exactly ${our_counter} per unit
+- You MUST reference the buyer's price of ₹{buyer_offered}
+- You MUST state our counter-offer of exactly ₹{our_counter} per unit
 {total_rule}- Do NOT reveal our minimum price, cost price, or concession budget
 - {urgency if urgency else "Be firm but reasonable"}
 - Keep it 2-3 sentences
@@ -169,7 +169,7 @@ def build_reject_prompt(
 CONTEXT:
 - Product: {product_name}
 - Quantity: {quantity} unit(s)
-- Last buyer offer: ${buyer_offered} per unit
+- Last buyer offer: ₹{buyer_offered} per unit
 - Round: {round_number} of {max_rounds}
 - Reason: {reason}
 
@@ -241,9 +241,9 @@ def build_context_analysis_prompt(
 
 PRODUCT DATA:
 - Product: {product_name}
-- Base/listed price: ${base_price} per unit
-- Cost to seller: ${cost_price} per unit
-- Seller's minimum acceptable price: ${min_acceptable_price} per unit
+- Base/listed price: ₹{base_price} per unit
+- Cost to seller: ₹{cost_price} per unit
+- Seller's minimum acceptable price: ₹{min_acceptable_price} per unit
 - Maximum allowed loss percentage: {max_loss_percentage}%
 
 INVENTORY CONTEXT:
@@ -275,8 +275,8 @@ Based on this analysis, provide the optimal negotiation posture as JSON with the
 
 CONSTRAINTS:
 - target_price MUST be >= reservation_price >= walk_away_price
-- walk_away_price MUST be >= min_acceptable_price (${min_acceptable_price})
-- target_price MUST be <= base_price (${base_price})
+- walk_away_price MUST be >= min_acceptable_price (₹{min_acceptable_price})
+- target_price MUST be <= base_price (₹{base_price})
 - total_concession_budget = target_price - reservation_price
 - per_round_concession = total_concession_budget / effective_rounds
 - All prices must be positive numbers
@@ -325,10 +325,10 @@ def build_initial_offer_pricing_prompt(
 
 PRODUCT:
 - Product: {product_name}
-- Base/listed price: ${base_price} per unit
-- Cost to seller: ${cost_price} per unit
-- Min acceptable price: ${min_acceptable_price} per unit
-- Strategic target price: ${target_price} per unit
+- Base/listed price: ₹{base_price} per unit
+- Cost to seller: ₹{cost_price} per unit
+- Min acceptable price: ₹{min_acceptable_price} per unit
+- Strategic target price: ₹{target_price} per unit
 
 CONTEXT:
 - Aggressiveness level: {aggressiveness} (0=very flexible, 1=very firm)
@@ -337,7 +337,7 @@ CONTEXT:
 - Quantity discount factor: {quantity_discount_factor} (1.0 = no discount)
 
 RULES:
-- The opening offer MUST always be the base/listed price (${base_price})
+- The opening offer MUST always be the base/listed price (₹{base_price})
 - The seller always starts the negotiation at full asking price — no early discounts
 - Apply quantity discount factor ONLY if buyer wants multiple units
 - After applying quantity discount, the offer must still be >= min_acceptable_price
@@ -378,38 +378,38 @@ def build_evaluate_offer_prompt(
 
 PRODUCT:
 - Product: {product_name}
-- Base price: ${base_price} | Cost: ${cost_price} | Min acceptable: ${min_acceptable_price}
+- Base price: ₹{base_price} | Cost: ₹{cost_price} | Min acceptable: ₹{min_acceptable_price}
 
 CURRENT OFFER:
-- Buyer offers: ${buyer_offered} per unit
+- Buyer offers: ₹{buyer_offered} per unit
 - Buyer's message: "{buyer_message}"
 - Round: {current_round} of {max_rounds}
 
 NEGOTIATION STATE:
-- Our last offer: ${our_last_offer} per unit
-- Buyer's previous offer: ${buyer_last_offer} per unit
+- Our last offer: ₹{our_last_offer} per unit
+- Buyer's previous offer: ₹{buyer_last_offer} per unit
 - Our offer history: [{offers_history}]
 - Buyer offer history: [{buyer_history}]
 
 STRATEGIC POSTURE:
 - Mode: {mode}
-- Target price: ${target_price} | Reservation: ${reservation_price} | Walk-away: ${walk_away_price}
+- Target price: ₹{target_price} | Reservation: ₹{reservation_price} | Walk-away: ₹{walk_away_price}
 - Aggressiveness: {aggressiveness} | Flexibility: {flexibility} | Risk tolerance: {risk_tolerance}
 
 CONCESSION BUDGET:
-- Total budget: ${total_concession_budget}
-- Already used: ${concession_used}
-- Remaining: ${str(float(total_concession_budget) - float(concession_used))}
+- Total budget: ₹{total_concession_budget}
+- Already used: ₹{concession_used}
+- Remaining: ₹{str(float(total_concession_budget) - float(concession_used))}
 
 QUANTITY: {requested_quantity} units
 
 DECISION RULES:
-- The buyer's offer of ${buyer_offered} is BELOW the seller's minimum acceptable price (${min_acceptable_price})
+- The buyer's offer of ₹{buyer_offered} is BELOW the seller's minimum acceptable price (₹{min_acceptable_price})
 - You CANNOT accept this offer. You must either COUNTER or REJECT.
-- "counter" — provide a new counter price that is LOWER than (or equal to) our last offer of ${our_last_offer}
+- "counter" — provide a new counter price that is LOWER than (or equal to) our last offer of ₹{our_last_offer}
 - "reject" — only if this is the final round or buyer is clearly not negotiating in good faith
-- Counter price MUST be >= min_acceptable_price (${min_acceptable_price})
-- Counter price MUST be <= our last offer (${our_last_offer}) — NEVER raise our price
+- Counter price MUST be >= min_acceptable_price (₹{min_acceptable_price})
+- Counter price MUST be <= our last offer (₹{our_last_offer}) — NEVER raise our price
 - Show the buyer we are moving toward them, but not below our minimum
 - Consider buyer's movement pattern — are they increasing offers? By how much?
 - If buyer barely moved, concede less. If buyer made a big jump, concede more.
@@ -489,20 +489,20 @@ def build_chat_understanding_prompt(
             total_price_at_base = 0.0
         total_context = f"""
 IMPORTANT — PRICE DISAMBIGUATION (quantity = {current_quantity}):
-Our current per-unit offer is ${our_last_offer} → total for {current_quantity} units = ${total_price_at_offer:.2f}.
-Base per-unit price is ${base_price} → total for {current_quantity} units = ${total_price_at_base:.2f}.
+Our current per-unit offer is ₹{our_last_offer} → total for {current_quantity} units = ₹{total_price_at_offer:.2f}.
+Base per-unit price is ₹{base_price} → total for {current_quantity} units = ₹{total_price_at_base:.2f}.
 
 When the buyer states a number:
   • If they say "per unit" or "each" → set extracted_unit_price.
   • If they say "total", "for {current_quantity} units", "for all" → set extracted_total_price.
-  • HEURISTIC — if the number is within 15% of our current per-unit offer (${our_last_offer}),
+  • HEURISTIC — if the number is within 15% of our current per-unit offer (₹{our_last_offer}),
     treat it as PER-UNIT even if the buyer says something like "X for {current_quantity} units".
     Rationale: a serious counter-offer is usually near the current negotiation range.
   • If it is a BARE number (e.g. "1200"):
     – Check the conversation history below.  If the buyer has been using totals,
       this number is almost certainly a total → set extracted_total_price.
-    – Otherwise, if the number ≈ base_price (${base_price}) or below, treat as per-unit.
-    – If the number ≈ base_price × {current_quantity} (${total_price_at_base:.2f}) or between
+    – Otherwise, if the number ≈ base_price (₹{base_price}) or below, treat as per-unit.
+    – If the number ≈ base_price × {current_quantity} (₹{total_price_at_base:.2f}) or between
       base_price and base_price × {current_quantity}, treat as total.
 """
 
@@ -518,18 +518,18 @@ RECENT CONVERSATION (use this to understand the buyer's pricing convention):
 
 SITUATION:
 - Product: {product_name}
-- Our initial/base price: ${base_price} per unit
-- Our current offer: ${our_last_offer} per unit
+- Our initial/base price: ₹{base_price} per unit
+- Our current offer: ₹{our_last_offer} per unit
 - Current round: {current_round} of {max_rounds}
 - Mode: {mode}
 - Current quantity: {current_quantity} unit(s)
 - Price history: {negotiation_history}
 {total_context}{history_section}
 CRITICAL — BACKWARD REFERENCES vs FORWARD BIDS:
-If the buyer mentions a past price (e.g., "earlier you said $299", "you offered $250 before",
+If the buyer mentions a past price (e.g., "earlier you said ₹299", "you offered ₹250 before",
 "your original price was $X"), this is a REFERENCE to a previous round, NOT a new offer.
 - Do NOT set has_price=true for backward-looking references.
-- A new bid must be forward-looking: "I offer $X", "how about $X", "can you do $X".
+- A new bid must be forward-looking: "I offer ₹X", "how about ₹X", "can you do ₹X".
 - If the same message contains BOTH a reference AND a bid, ONLY extract the bid.
 
 BUYER SAYS:
@@ -537,14 +537,14 @@ BUYER SAYS:
 
 TASK:
 1. Does this message contain a price offer (explicit or implied)?
-   - Explicit: "$70", "I offer 65", "how about 80", "70 per unit", "my budget is 55"
+   - Explicit: "₹70", "$70", "I offer 65", "how about 80", "70 per unit", "my budget is 55"
    - Implied: "can you do half price?", "10% off?", "what about a 20% discount?"
    - NOT a price: "hello", "tell me more", "why so expensive?", "what features?", "can you do better?"
    
 2. If YES (contains price): extract the price AND decide if it is per-unit or total.
-   - For percentages/discounts, calculate the actual dollar amount based on our current offer of ${our_last_offer} (per unit).
-   - "half price" = ${our_last_offer} / 2 → per-unit price → set extracted_unit_price
-   - "10% off"  = ${our_last_offer} * 0.90 → per-unit price → set extracted_unit_price
+   - For percentages/discounts, calculate the actual amount based on our current offer of ₹{our_last_offer} (per unit).
+   - "half price" = ₹{our_last_offer} / 2 → per-unit price → set extracted_unit_price
+   - "10% off"  = ₹{our_last_offer} * 0.90 → per-unit price → set extracted_unit_price
    - Set EXACTLY ONE of extracted_unit_price or extracted_total_price (never both).
 
 3. Does the buyer want to change quantity?
@@ -570,13 +570,13 @@ TASK:
    - When the buyer changes quantity AND mentions a price, determine whether the
      price is for THE TOTAL ORDER or PER UNIT.
    - Examples that are TOTAL prices → set extracted_total_price:
-     • "2 units for $15000" → total = $15000
-     • "I'll take 3 at $2000" → total = $2000
-     • "$5000 for both" → total = $5000
-     • "give me 2 for 15000" → total = $15000
+     • "2 units for ₹15000" → total = ₹15000₹15000
+     • "I'll take 3 at ₹2000" → total = ₹15000₹2000
+     • "₹5000 for both" → total = ₹15000₹5000
+     • "give me 2 for 15000" → total = ₹15000$15000
    - Examples that are PER-UNIT prices → set extracted_unit_price:
-     • "2 units at $15000 each" → per-unit = $15000
-     • "$7500 per unit, quantity 2" → per-unit = $7500
+     • "2 units at ₹15000 each" → per-unit = ₹15000
+     • "₹7500 per unit, quantity 2" → per-unit = ₹7500
    - DEFAULT RULE: if the buyer says "{{qty}} units" + a price WITHOUT "each" or
      "per unit", and the price is close to the current per-unit counter, treat
      it as a TOTAL price.  A buyer who has been negotiating DOWN would not
@@ -673,7 +673,7 @@ def build_conversational_reply_prompt(
 
     return f"""CURRENT NEGOTIATION STATE (these numbers are fixed — use them verbatim if needed):
 - Product: {product_name}
-- Current offer: ${current_unit_price} per unit for {qty_phrase} (total: ${current_total_price})
+- Current offer: ₹{current_unit_price} per unit for {qty_phrase} (total: ₹{current_total_price})
 - Rounds remaining: {rounds_remaining}
 {history_section}
 BUYER JUST SAID:

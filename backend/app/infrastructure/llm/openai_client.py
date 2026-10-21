@@ -174,8 +174,12 @@ class OpenRouterClient:
         Used when called from non-async context.
         """
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+
+            if loop is not None and loop.is_running():
                 # We're inside an async context — use the shared thread pool
                 result = _sync_pool.submit(
                     asyncio.run,
@@ -183,7 +187,7 @@ class OpenRouterClient:
                 ).result(timeout=self.timeout + 5)
                 return result
             else:
-                return loop.run_until_complete(
+                return asyncio.run(
                     self.generate(system_prompt, user_prompt, temperature)
                 )
         except Exception as e:

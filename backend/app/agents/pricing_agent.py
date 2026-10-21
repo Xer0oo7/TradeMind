@@ -90,8 +90,8 @@ BUYER MESSAGE:
 \"\"\"{buyer_message}\"\"\"
 
 CONTEXT:
-- Product base price: ${base_price}
-- Seller's current counter: ${current_counter}
+- Product base price: ₹{base_price}
+- Seller's current counter: ₹{current_counter}
 - Quantity previously agreed: {quantity}
 
 TOTAL PRICE EXTRACTION PATTERNS:
@@ -209,18 +209,18 @@ Generate the response:"""
 # ═══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATE_FALLBACKS = {
-    "accept": "We have a deal at ${counter_unit_price} per unit for {quantity} unit(s) (${counter_total_price} total). Thank you!",
-    "counter": "I appreciate your offer. My best price is ${counter_unit_price} per unit for {quantity} unit(s) (${counter_total_price} total).",
-    "final_offer": "This is my final offer: ${counter_unit_price} per unit for {quantity} unit(s) (${counter_total_price} total). I can't go lower.",
+    "accept": "We have a deal at ₹{counter_unit_price} per unit for {quantity} unit(s) (₹{counter_total_price} total). Thank you!",
+    "counter": "I appreciate your offer. My best price is ₹{counter_unit_price} per unit for {quantity} unit(s) (₹{counter_total_price} total).",
+    "final_offer": "This is my final offer: ₹{counter_unit_price} per unit for {quantity} unit(s) (₹{counter_total_price} total). I can't go lower.",
     "reject": "Unfortunately we couldn't reach an agreement. Thank you for your time.",
 }
 
 # Bug F: Firmness-aware fallback variants for when template fallback triggers
 _FIRMNESS_FALLBACKS = {
-    0: "I appreciate your offer. My best price is ${counter_unit_price} per unit for {quantity} unit(s) (${counter_total_price} total).",
-    1: "I can offer ${counter_unit_price} per unit for {quantity} unit(s) (${counter_total_price} total). There's limited room to move further.",
-    2: "Our price is ${counter_unit_price} per unit for {quantity} unit(s) (${counter_total_price} total). We're near our best offer.",
-    3: "This is our final offer: ${counter_unit_price} per unit for {quantity} unit(s) (${counter_total_price} total). I can't go lower.",
+    0: "I appreciate your offer. My best price is ₹{counter_unit_price} per unit for {quantity} unit(s) (₹{counter_total_price} total).",
+    1: "I can offer ₹{counter_unit_price} per unit for {quantity} unit(s) (₹{counter_total_price} total). There's limited room to move further.",
+    2: "Our price is ₹{counter_unit_price} per unit for {quantity} unit(s) (₹{counter_total_price} total). We're near our best offer.",
+    3: "This is our final offer: ₹{counter_unit_price} per unit for {quantity} unit(s) (₹{counter_total_price} total). I can't go lower.",
 }
 
 
@@ -515,9 +515,9 @@ class PricingStrategyAgent:
         Skips small numbers (< 20) that are likely round numbers,
         quantities, or other non-price references.
         """
-        pattern = re.compile(r'\$[\d,]+\.?\d*')
+        pattern = re.compile(r'[$₹][\d,]+\.?\d*')
         def _replacer(match: re.Match) -> str:
-            raw = match.group(0).replace(",", "").lstrip("$")
+            raw = match.group(0).replace(",", "").lstrip("$₹")
             try:
                 value = float(raw)
             except ValueError:
@@ -530,7 +530,7 @@ class PricingStrategyAgent:
             if abs(value - counter_total_price) <= 1.00:
                 return match.group(0)
             # Divergent price — replace with unit price
-            prefix = "$" if match.group(0).startswith("$") else ""
+            prefix = "₹" if match.group(0).startswith(("₹", "$")) else ""
             return f"{prefix}{counter_unit_price:.2f}"
         return pattern.sub(_replacer, text)
 
@@ -587,8 +587,8 @@ class PricingStrategyAgent:
             "firmness_level":           firmness_level,
             "buyer_moving_up":          buyer_moving,
             # Patch 3: enriched verbalize context
-            "exact_counter_str":        f"${result.counter_unit_price:.2f}",
-            "exact_total_str":          f"${result.counter_unit_price * state.quantity:.2f}",
+            "exact_counter_str":        f"₹{result.counter_unit_price:.2f}",
+            "exact_total_str":          f"₹{result.counter_unit_price * state.quantity:.2f}",
             "exact_qty":                str(int(state.quantity)),
             "buyer_last_message":       getattr(state, '_last_buyer_message', None) or "",
             "buyer_moving_toward_counter": buyer_moving,
@@ -614,14 +614,14 @@ class PricingStrategyAgent:
                         "- Do NOT mention any prices, counter-offers, minimum acceptable price, cost, floors, or financial limits in your response. Just say that we cannot meet their requirements and wish them the best."
                     )
                 else:
-                    price_line = f"- Our counter price: ${result.counter_unit_price:.2f} per unit (total: ${result.counter_unit_price * state.quantity:.2f} for {state.quantity} unit(s))"
+                    price_line = f"- Our counter price: ₹{result.counter_unit_price:.2f} per unit (total: ₹{result.counter_unit_price * state.quantity:.2f} for {state.quantity} unit(s))"
                     decision_rules = (
-                        f"- If decision is \"accept\": confirm the deal at ${result.counter_unit_price:.2f} per unit.\n"
-                        f"- If decision is \"counter\": present ${result.counter_unit_price:.2f} as our offer.\n"
-                        f"- If decision is \"final_offer\": make clear this is our final offer at ${result.counter_unit_price:.2f}.\n"
-                        f"- You MUST mention the price ${result.counter_unit_price:.2f} per unit in your response.\n"
-                        f"- When quantity is more than 1, ALWAYS also state the total of ${result.counter_unit_price * state.quantity:.2f} for {state.quantity} units.\n"
-                        f"- Do NOT mention any price other than ${result.counter_unit_price:.2f} (unit) or ${result.counter_unit_price * state.quantity:.2f} (total)."
+                        f"- If decision is \"accept\": confirm the deal at ₹{result.counter_unit_price:.2f} per unit.\n"
+                        f"- If decision is \"counter\": present ₹{result.counter_unit_price:.2f} as our offer.\n"
+                        f"- If decision is \"final_offer\": make clear this is our final offer at ₹{result.counter_unit_price:.2f}.\n"
+                        f"- You MUST mention the price ₹{result.counter_unit_price:.2f} per unit in your response.\n"
+                        f"- When quantity is more than 1, ALWAYS also state the total of ₹{result.counter_unit_price * state.quantity:.2f} for {state.quantity} units.\n"
+                        f"- Do NOT mention any price other than ₹{result.counter_unit_price:.2f} (unit) or ₹{result.counter_unit_price * state.quantity:.2f} (total)."
                     )
 
                 safe_ctx = dict(verb_context)
@@ -681,7 +681,9 @@ class PricingStrategyAgent:
             tpl = _FIRMNESS_FALLBACKS.get(firmness, _FIRMNESS_FALLBACKS[0])
         else:
             tpl = _TEMPLATE_FALLBACKS.get(decision, _TEMPLATE_FALLBACKS["counter"])
-        return tpl.replace("${counter_unit_price}", f'{ctx["counter_unit_price"]:.2f}').replace(
+        return tpl.replace("₹{counter_unit_price}", f'{ctx["counter_unit_price"]:.2f}').replace(
+            "₹{counter_total_price}", f'{ctx["counter_total_price"]:.2f}'
+        ).replace("${counter_unit_price}", f'{ctx["counter_unit_price"]:.2f}').replace(
             "${counter_total_price}", f'{ctx["counter_total_price"]:.2f}'
         ).replace("{quantity}", str(ctx["quantity"]))
 

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Send, Loader2, AlertCircle, TrendingUp, RotateCcw, Plus, Minus, Zap, Shield, Phone, X, CheckCircle, Package, Search, ChevronDown, Database, Edit3, PhoneCall } from 'lucide-react';
 import { createSession, sendChat, healthCheck, dbStartSession, dbSaveMessage, dbCloseSession, dbSaveCallbackRequest } from './api';
 import { getProducts } from '../../lib/productStore';
@@ -322,9 +322,9 @@ export default function Chat() {
                     const acceptedPrice = response.pricing?.accepted_price;
 
                     if (decision === 'counter' && counterPrice) {
-                        botText += "\n\n\u{1F4B0} Counter offer: $" + parseFloat(counterPrice).toFixed(2);
+                        botText += "\n\n\u{1F4B0} Counter offer: ₹" + parseFloat(counterPrice).toFixed(2);
                     } else if (decision === 'accept' && acceptedPrice) {
-                        botText += "\n\n\u2705 Deal accepted at $" + parseFloat(acceptedPrice).toFixed(2) + "!";
+                        botText += "\n\n\u2705 Deal accepted at ₹" + parseFloat(acceptedPrice).toFixed(2) + "!";
                     } else if (decision === 'reject') {
                         botText += "\n\n\u274C Offer rejected.";
                     }
@@ -537,8 +537,8 @@ export default function Chat() {
                                                                 </p>
                                                             </div>
                                                             <div className="text-right">
-                                                                <p className="font-bold text-neo-teal text-sm">${p.basePrice.toFixed(2)}</p>
-                                                                <p className="text-xs text-neo-navy/40">Cost: ${p.costPrice.toFixed(2)}</p>
+                                                                <p className="font-bold text-neo-teal text-sm">₹{p.basePrice.toFixed(2)}</p>
+                                                                <p className="text-xs text-neo-navy/40">Cost: ₹{p.costPrice.toFixed(2)}</p>
                                                             </div>
                                                         </div>
                                                     </button>
@@ -566,15 +566,15 @@ export default function Chat() {
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="border-2 border-neo-navy/20 p-2 bg-white">
                                                 <p className="text-[10px] font-bold text-neo-navy/50 uppercase tracking-widest">Base Price</p>
-                                                <p className="text-lg font-bold text-neo-navy">${selectedProduct.basePrice.toFixed(2)}</p>
+                                                <p className="text-lg font-bold text-neo-navy">₹{selectedProduct.basePrice.toFixed(2)}</p>
                                             </div>
                                             <div className="border-2 border-neo-navy/20 p-2 bg-white">
                                                 <p className="text-[10px] font-bold text-neo-navy/50 uppercase tracking-widest">Cost Price</p>
-                                                <p className="text-lg font-bold text-neo-navy">${selectedProduct.costPrice.toFixed(2)}</p>
+                                                <p className="text-lg font-bold text-neo-navy">₹{selectedProduct.costPrice.toFixed(2)}</p>
                                             </div>
                                             <div className="border-2 border-neo-navy/20 p-2 bg-white">
                                                 <p className="text-[10px] font-bold text-neo-navy/50 uppercase tracking-widest">Min Acceptable</p>
-                                                <p className="text-lg font-bold text-neo-navy">${selectedProduct.minAcceptablePrice.toFixed(2)}</p>
+                                                <p className="text-lg font-bold text-neo-navy">₹{selectedProduct.minAcceptablePrice.toFixed(2)}</p>
                                             </div>
                                             <div className="border-2 border-neo-navy/20 p-2 bg-white">
                                                 <p className="text-[10px] font-bold text-neo-navy/50 uppercase tracking-widest">Margin</p>
@@ -671,7 +671,7 @@ export default function Chat() {
                                 <div>
                                     <label className="text-xs font-bold text-neo-navy/60 mb-2 block uppercase tracking-widest">Base Price (Selling Price)</label>
                                     <div className="flex items-center border-3 border-neo-navy overflow-hidden">
-                                        <span className="px-3 py-2.5 bg-neo-navy text-neo-cream font-bold text-lg">$</span>
+                                        <span className="px-3 py-2.5 bg-neo-navy text-neo-cream font-bold text-lg">₹</span>
                                         <input
                                             type="number"
                                             value={config.basePrice}
@@ -687,7 +687,7 @@ export default function Chat() {
                                 <div>
                                     <label className="text-xs font-bold text-neo-navy/60 mb-2 block uppercase tracking-widest">Actual Cost Price</label>
                                     <div className="flex items-center border-3 border-neo-navy overflow-hidden">
-                                        <span className="px-3 py-2.5 bg-neo-navy text-neo-cream font-bold text-lg">$</span>
+                                        <span className="px-3 py-2.5 bg-neo-navy text-neo-cream font-bold text-lg">₹</span>
                                         <input
                                             type="number"
                                             value={config.costPrice}
@@ -771,10 +771,10 @@ export default function Chat() {
                             {config.maxRounds} Rounds
                         </span>
                         <span className="bg-neo-teal px-3 py-1 border-2 border-neo-cream font-bold text-xs">
-                            Base ${config.basePrice}
+                            Base ₹{config.basePrice}
                         </span>
                         <span className="bg-neo-teal px-3 py-1 border-2 border-neo-cream font-bold text-xs">
-                            Cost ${config.costPrice}
+                            Cost ₹{config.costPrice}
                         </span>
                         {/* Voice Call Button in Header */}
                         {sessionId && !negotiationEnded && (
@@ -856,7 +856,7 @@ export default function Chat() {
                                         )}
                                         {msg.meta?.offeredPrice && (
                                             <span className="text-xs font-bold opacity-90">
-                                                ${msg.meta.offeredPrice.toFixed(2)}
+                                                ₹{msg.meta.offeredPrice.toFixed(2)}
                                             </span>
                                         )}
                                     </div>
@@ -992,7 +992,7 @@ export default function Chat() {
                                 type="text"
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
-                                placeholder='Type anything \u2014 "hello", "why so expensive?", "I offer $70"...'
+                                placeholder='Type anything \u2014 "hello", "why so expensive?", "I offer ₹70"...'
                                 className="flex-1 px-4 py-3 border-3 border-neo-navy bg-white text-neo-navy placeholder-neo-navy/50 focus:outline-none font-body"
                                 disabled={loading || !sessionId}
                             />

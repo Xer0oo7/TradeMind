@@ -81,7 +81,7 @@ _PRICE_WORDS = frozenset({
 })
 
 _HAS_DIGIT = re.compile(r'\d')
-_HAS_DOLLAR = re.compile(r'\$')
+_HAS_CURRENCY = re.compile(r'[$₹]')
 
 
 def _is_filler(text: str) -> bool:
@@ -92,8 +92,8 @@ def _is_filler(text: str) -> bool:
     """
     cleaned = text.lower().strip().rstrip('.!?,;:')
 
-    # NEVER filter if it contains digits or dollar signs
-    if _HAS_DIGIT.search(cleaned) or _HAS_DOLLAR.search(cleaned):
+    # NEVER filter if it contains digits or currency signs
+    if _HAS_DIGIT.search(cleaned) or _HAS_CURRENCY.search(cleaned):
         return False
 
     # NEVER filter if it contains price-related words

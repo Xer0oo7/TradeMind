@@ -88,8 +88,8 @@ _QUANTITY_INTENT_RE = re.compile(
 )
 
 _EXPLICIT_PRICE_RE = re.compile(
-    r"(?:[$]\s*(\d+(?:\.\d{1,2})?)|"
-    r"\b(?:offer|offering|pay|price|budget|bid)\s*(?:is|of|=|:)?\s*[$]?\s*(\d+(?:\.\d{1,2})?))",
+    r"(?:[$₹]\s*(\d+(?:\.\d{1,2})?)|"
+    r"\b(?:offer|offering|pay|price|budget|bid)\s*(?:is|of|=|:)?\s*[$₹]?\s*(\d+(?:\.\d{1,2})?))",
     re.IGNORECASE,
 )
 
@@ -105,7 +105,7 @@ QUANTITY_SENTENCE_RE = re.compile(
 # matches when the number is at the START of the message, so it can't
 # misfire on unrelated mid-sentence numbers.
 _QTY_CONTEXT_TOTAL_RE = re.compile(
-    r'^\s*\$?\s*(\d+(?:\.\d{1,2})?)\s+for\b',
+    r'^\s*[$₹]?\s*(\d+(?:\.\d{1,2})?)\s+for\b',
     re.IGNORECASE,
 )
 
@@ -409,9 +409,9 @@ class NegotiationEngine:
             state.offers_history if state else [],
             state.buyer_history if state else []
         )):
-            history_parts.append(f"R{i+1}: Seller=${our}, Buyer=${buyer}")
+            history_parts.append(f"R{i+1}: Seller=₹{our}, Buyer=₹{buyer}")
         if state and len(state.offers_history) > len(state.buyer_history):
-            history_parts.append(f"Current seller offer: ${state.offers_history[-1]}")
+            history_parts.append(f"Current seller offer: ₹{state.offers_history[-1]}")
         history_str = "; ".join(history_parts) if history_parts else "Opening round — no offers exchanged yet"
 
         current_offer = str(state.current_offer) if state else str(session.initial_offer)
@@ -539,8 +539,8 @@ class NegotiationEngine:
 
                             confirm_msg = (
                                 f"Just to confirm \u2014 you'd like to finalize at "
-                                f"${last_counter:,.2f} per unit for {qty} unit(s), "
-                                f"totaling ${total:,.2f}? "
+                                f"₹{last_counter:,.2f} per unit for {qty} unit(s), "
+                                f"totaling ₹{total:,.2f}? "
                                 f"{_CONFIRM_MARKER}"
                             )
                             state.chat_history.append({"role": "Buyer", "text": chat_message.message})
@@ -632,8 +632,8 @@ class NegotiationEngine:
                                 total = round(base * qty, 2)
                                 confirm_msg = (
                                     f"{_FULL_PRICE_CONFIRM_MARKER} "
-                                    f"That's ${base:,.2f} per unit for {qty} unit(s), "
-                                    f"totaling ${total:,.2f}. "
+                                    f"That's ₹{base:,.2f} per unit for {qty} unit(s), "
+                                    f"totaling ₹{total:,.2f}. "
                                     f"Would you like to proceed at full price, or make a different offer? "
                                     f"{_CONFIRM_MARKER}"
                                 )
@@ -736,8 +736,8 @@ class NegotiationEngine:
             total = round(last_counter * qty, 2)
             confirm_msg = (
                 f"Just to confirm \u2014 you'd like to finalize at "
-                f"${last_counter:,.2f} per unit for {qty} unit(s), "
-                f"totaling ${total:,.2f}? "
+                f"₹{last_counter:,.2f} per unit for {qty} unit(s), "
+                f"totaling ₹{total:,.2f}? "
                 f"{_CONFIRM_MARKER}"
             )
             state.chat_history.append({"role": "Buyer", "text": chat_message.message})
@@ -760,7 +760,7 @@ class NegotiationEngine:
                 last_counter = eng.counter_history[-1]
             reject_reply = (
                 f"I understand that doesn't work for you. "
-                f"Our current offer is ${last_counter:,.2f} per unit. "
+                f"Our current offer is ₹{last_counter:,.2f} per unit. "
                 f"What price would you have in mind?"
             )
             state.chat_history.append({"role": "Buyer", "text": chat_message.message})
@@ -841,8 +841,8 @@ class NegotiationEngine:
                 total = round(base * qty, 2)
                 confirm_msg = (
                     f"{_FULL_PRICE_CONFIRM_MARKER} "
-                    f"That's ${base:,.2f} per unit for {qty} unit(s), "
-                    f"totaling ${total:,.2f}. "
+                    f"That's ₹{base:,.2f} per unit for {qty} unit(s), "
+                    f"totaling ₹{total:,.2f}. "
                     f"Would you like to proceed at full price, or make a different offer? "
                     f"{_CONFIRM_MARKER}"
                 )
@@ -875,7 +875,7 @@ class NegotiationEngine:
         # ── Bug A: Guard bare regex with quantity-context check ────
         #   "I want 3 units" should NOT extract "3" as a price offer.
         is_quantity_context = bool(QUANTITY_SENTENCE_RE.search(chat_message.message))
-        match = re.search(r'\$?\s?(\d+(?:\.\d{1,2})?)', chat_message.message)
+        match = re.search(r'[$₹]?\s?(\d+(?:\.\d{1,2})?)', chat_message.message)
         if match and not is_quantity_context:
             price = float(match.group(1))
             if price > 0:
@@ -886,8 +886,8 @@ class NegotiationEngine:
                     total = round(base * qty, 2)
                     confirm_msg = (
                         f"{_FULL_PRICE_CONFIRM_MARKER} "
-                        f"That's ${base:,.2f} per unit for {qty} unit(s), "
-                        f"totaling ${total:,.2f}. "
+                        f"That's ₹{base:,.2f} per unit for {qty} unit(s), "
+                        f"totaling ₹{total:,.2f}. "
                         f"Would you like to proceed at full price, or make a different offer? "
                         f"{_CONFIRM_MARKER}"
                     )
@@ -961,26 +961,26 @@ class NegotiationEngine:
             if qty > 1:
                 generic_reply = (
                     f"We're currently at {qty} unit(s) at "
-                    f"${last_counter:,.2f}/unit (${total:,.2f} total). "
+                    f"₹{last_counter:,.2f}/unit (₹{total:,.2f} total). "
                     f"Would you like to adjust the quantity or make a price offer?"
                 )
             else:
                 generic_reply = (
                     f"We're currently at {qty} unit at "
-                    f"${last_counter:,.2f}/unit. "
+                    f"₹{last_counter:,.2f}/unit. "
                     f"Would you like to adjust the quantity or make a price offer?"
                 )
         elif qty > 1:
             generic_reply = (
                 f"Thank you for your interest in {session.product.product_name}! "
-                f"Our current offer is ${last_counter:,.2f} per unit "
-                f"(${total:,.2f} for {qty} units). "
+                f"Our current offer is ₹{last_counter:,.2f} per unit "
+                f"(₹{total:,.2f} for {qty} units). "
                 f"Feel free to make a specific price offer."
             )
         else:
             generic_reply = (
                 f"Thank you for your interest in {session.product.product_name}! "
-                f"Our current offer is ${last_counter:,.2f} per unit. "
+                f"Our current offer is ₹{last_counter:,.2f} per unit. "
                 f"Feel free to make a specific price offer."
             )
         state.chat_history.append({"role": "Buyer", "text": chat_message.message})
@@ -1055,8 +1055,8 @@ class NegotiationEngine:
 
         qty_msg = (
             f"Updated to {new_qty} unit(s). "
-            f"Our current offer is ${per_unit:.2f} per unit "
-            f"(${per_unit * new_qty:.2f} total for {new_qty} units). "
+            f"Our current offer is ₹{per_unit:.2f} per unit "
+            f"(₹{per_unit * new_qty:.2f} total for {new_qty} units). "
             f"What price would you like to offer?"
         )
         state.chat_history.append({"role": "Buyer", "text": chat_message.message})

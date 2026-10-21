@@ -69,62 +69,62 @@ class ConversationAgent:
     
     INITIAL_OFFER_TEMPLATES = {
         NegotiationMode.MAX_PROFIT: [
-            "Hey! Thanks for checking out {product}. For {quantity} unit(s), I can do ${offer} per unit \u2014 that's a solid price for what you're getting.",
-            "Great to connect! {product} at ${offer} each for {quantity} unit(s) \u2014 I think you'll love the value here.",
+            "Hey! Thanks for checking out {product}. For {quantity} unit(s), I can do ₹{offer} per unit — that's a solid price for what you're getting.",
+            "Great to connect! {product} at ₹{offer} each for {quantity} unit(s) — I think you'll love the value here.",
         ],
         NegotiationMode.MIN_LOSS: [
-            "Hey there! I'd love to get {product} to you. For {quantity} unit(s), I'm starting at ${offer} each \u2014 let's talk!",
-            "Thanks for your interest! I'm motivated to make this work. {quantity} unit(s) of {product} at ${offer} each \u2014 what do you think?",
+            "Hey there! I'd love to get {product} to you. For {quantity} unit(s), I'm starting at ₹{offer} each — let's talk!",
+            "Thanks for your interest! I'm motivated to make this work. {quantity} unit(s) of {product} at ₹{offer} each — what do you think?",
         ],
     }
     
     ACCEPT_TEMPLATES = [
-        "Done deal! ${price} per unit for {quantity} unit(s) \u2014 I'm happy with that. Pleasure doing business!",
-        "We've got a deal at ${price} per unit! Great negotiating \u2014 I think this works out well for both of us.",
-        "Love it! ${price} per unit for {quantity} unit(s). Let's make it official!",
+        "Done deal! ₹{price} per unit for {quantity} unit(s) — I'm happy with that. Pleasure doing business!",
+        "We've got a deal at ₹{price} per unit! Great negotiating — I think this works out well for both of us.",
+        "Love it! ₹{price} per unit for {quantity} unit(s). Let's make it official!",
     ]
     
     COUNTER_TEMPLATES = {
         NegotiationMode.MAX_PROFIT: {
             "early": [
-                "I hear you at ${buyer_offer}, but I need to be at ${our_offer} per unit. The quality on this one really backs up that price.",
-                "Thanks for the offer! ${buyer_offer} is a bit low for me though \u2014 how about ${our_offer}? I think that's fair.",
-                "I get where you're coming from with ${buyer_offer}. Let me meet you closer \u2014 ${our_offer} per unit work for you?",
+                "I hear you at ₹{buyer_offer}, but I need to be at ₹{our_offer} per unit. The quality on this one really backs up that price.",
+                "Thanks for the offer! ₹{buyer_offer} is a bit low for me though — how about ₹{our_offer}? I think that's fair.",
+                "I get where you're coming from with ₹{buyer_offer}. Let me meet you closer — ₹{our_offer} per unit work for you?",
             ],
             "mid": [
-                "We're making progress! I've come down to ${our_offer} per unit \u2014 that's a real move on my end.",
-                "Alright, I can do ${our_offer}. That's me meeting you halfway. What do you say?",
+                "We're making progress! I've come down to ₹{our_offer} per unit — that's a real move on my end.",
+                "Alright, I can do ₹{our_offer}. That's me meeting you halfway. What do you say?",
             ],
             "late": [
-                "Look, ${our_offer} per unit is truly my best price. I can't stretch further than this.",
-                "I really want to close this deal \u2014 ${our_offer} is as far as I can go. Let's shake on it!",
+                "Look, ₹{our_offer} per unit is truly my best price. I can't stretch further than this.",
+                "I really want to close this deal — ₹{our_offer} is as far as I can go. Let's shake on it!",
             ],
         },
         NegotiationMode.MIN_LOSS: {
             "early": [
-                "I hear your ${buyer_offer}. Let me come to you a bit \u2014 how's ${our_offer} per unit?",
-                "I want to make this work! ${our_offer} per unit \u2014 that's me being flexible for you.",
+                "I hear your ₹{buyer_offer}. Let me come to you a bit — how's ₹{our_offer} per unit?",
+                "I want to make this work! ₹{our_offer} per unit — that's me being flexible for you.",
             ],
             "mid": [
-                "Alright, I'm at ${our_offer} now \u2014 that's a big move. Let's get this done!",
-                "I've come down to ${our_offer} per unit. We're really close \u2014 let's lock it in.",
+                "Alright, I'm at ₹{our_offer} now — that's a big move. Let's get this done!",
+                "I've come down to ₹{our_offer} per unit. We're really close — let's lock it in.",
             ],
             "late": [
-                "Final offer time: ${our_offer} per unit. I really can't go lower, but I hope we can make this work.",
-                "${our_offer} per unit \u2014 that's my absolute bottom. Take it and let's celebrate!",
+                "Final offer time: ₹{our_offer} per unit. I really can't go lower, but I hope we can make this work.",
+                "₹{our_offer} per unit — that's my absolute bottom. Take it and let's celebrate!",
             ],
         },
     }
     
     REJECT_TEMPLATES = [
-        "I really wanted to make this work, but I can't go that low. No hard feelings \u2014 hope we can work together in the future!",
+        "I really wanted to make this work, but I can't go that low. No hard feelings — hope we can work together in the future!",
         "Unfortunately the numbers just don't work at that price. It was great chatting with you though!",
-        "I wish I could go lower, but I've hit my limit. Thanks for your time \u2014 you know where to find me if you change your mind!",
+        "I wish I could go lower, but I've hit my limit. Thanks for your time — you know where to find me if you change your mind!",
     ]
     
     CONSTRAINT_VIOLATION_TEMPLATES = [
         "That offer is below what I can consider. You'll need to come up significantly for us to move forward.",
-        "I appreciate the offer, but ${buyer_offer} doesn't meet our requirements. We'd need a much stronger offer.",
+        "I appreciate the offer, but ₹{buyer_offer} doesn't meet our requirements. We'd need a much stronger offer.",
         "That's outside our acceptable range. Please reconsider and come back with a more competitive number.",
     ]
     
@@ -367,7 +367,7 @@ class ConversationAgent:
         # Append total when multi-unit
         if context.quantity > 1 and decision.accepted_price is not None:
             total = decision.accepted_price * context.quantity
-            msg = msg.rstrip('.') + f" (${self._format_price(total)} total)."
+            msg = msg.rstrip('.') + f" (₹{self._format_price(total)} total)."
         return msg
     
     def _generate_reject(
@@ -397,7 +397,7 @@ class ConversationAgent:
         # Append total when multi-unit
         if context.quantity > 1 and decision.counter_offer_price is not None:
             total = decision.counter_offer_price * context.quantity
-            msg += f" That's ${self._format_price(total)} total for {context.quantity} units."
+            msg += f" That's ₹{self._format_price(total)} total for {context.quantity} units."
         return msg
     
     def _generate_constraint_violation(

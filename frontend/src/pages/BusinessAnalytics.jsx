@@ -1155,19 +1155,19 @@ export default function BusinessAnalytics() {
                                 <div className="grid grid-cols-4 gap-2">
                                   <div className="text-center">
                                     <p className="text-[8px] text-neo-navy/50 uppercase">Min</p>
-                                    <p className="font-bold text-neo-teal text-sm">${competitiveData.market_summary.min_price}</p>
+                                    <p className="font-bold text-neo-teal text-sm">₹{competitiveData.market_summary.min_price}</p>
                                   </div>
                                   <div className="text-center">
                                     <p className="text-[8px] text-neo-navy/50 uppercase">Avg</p>
-                                    <p className="font-bold text-neo-navy text-sm">${competitiveData.market_summary.avg_market_price.toFixed(0)}</p>
+                                    <p className="font-bold text-neo-navy text-sm">₹{competitiveData.market_summary.avg_market_price.toFixed(0)}</p>
                                   </div>
                                   <div className="text-center">
                                     <p className="text-[8px] text-neo-navy/50 uppercase">Median</p>
-                                    <p className="font-bold text-neo-navy text-sm">${competitiveData.market_summary.median_price}</p>
+                                    <p className="font-bold text-neo-navy text-sm">₹{competitiveData.market_summary.median_price}</p>
                                   </div>
                                   <div className="text-center">
                                     <p className="text-[8px] text-neo-navy/50 uppercase">Max</p>
-                                    <p className="font-bold text-neo-maroon text-sm">${competitiveData.market_summary.max_price}</p>
+                                    <p className="font-bold text-neo-maroon text-sm">₹{competitiveData.market_summary.max_price}</p>
                                   </div>
                                 </div>
                               </NeoCard>
@@ -1187,7 +1187,7 @@ export default function BusinessAnalytics() {
                                           </p>
                                         </div>
                                         <div className="text-right ml-2">
-                                          <p className="font-bold text-sm text-neo-navy">${comp.price}</p>
+                                          <p className="font-bold text-sm text-neo-navy">₹{comp.price}</p>
                                           <p className={`text-[10px] font-bold ${
                                             comp.price_vs_mine < 0 ? 'text-neo-teal' : comp.price_vs_mine > 0 ? 'text-neo-maroon' : 'text-neo-navy/50'
                                           }`}>

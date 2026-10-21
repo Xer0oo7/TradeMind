@@ -54,10 +54,13 @@ class Settings(BaseSettings):
     sarvam_tts_model: str = "bulbul:v3-beta"
     sarvam_tts_speaker: str = "Shubh"
     sarvam_language: str = "en-IN"
-    
+    # Gemini Translation
+    gemini_api_key: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"
 
 
 @lru_cache()

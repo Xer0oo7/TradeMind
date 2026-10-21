@@ -1,5 +1,6 @@
-const API_BASE = 'http://127.0.0.1:8001/api/v1/negotiate';
-const CHAT_DB_BASE = 'http://127.0.0.1:8001/api/v1/chat-sessions';
+const BACKEND_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_AUTH_API_URL || 'http://127.0.0.1:8000';
+const API_BASE = `${BACKEND_URL}/api/v1/negotiate`;
+const CHAT_DB_BASE = `${BACKEND_URL}/api/v1/chat-sessions`;
 
 /** Default fetch timeout (15 seconds) */
 const FETCH_TIMEOUT_MS = 15000;
@@ -291,7 +292,7 @@ export async function healthCheck() {
 
 // Helper: extract a numeric price from user text
 export function extractPrice(text) {
-    const match = text.match(/\$?\s?(\d+(?:\.\d{1,2})?)/);
+    const match = text.match(/[$₹]?\s?(\d+(?:\.\d{1,2})?)/);
     return match ? parseFloat(match[1]) : null;
 }
 

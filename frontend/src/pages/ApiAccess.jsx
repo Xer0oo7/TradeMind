@@ -63,7 +63,7 @@ session = requests.post(f"{BASE}/api/v1/chat-sessions", json={
 print("Session:", session["id"])
 # Send a buyer offer
 reply = requests.post(f"{BASE}/api/v1/chat-sessions/{session['id']}/messages", json={
-    "user_message": "I'll pay $65", "bot_reply": "",
+    "user_message": "I'll pay ₹65", "bot_reply": "",
     "buyer_offer": 65.0, "seller_counter": None, "round_number": 1
 }, headers=H).json()
 print("Reply:", reply)`;
@@ -86,7 +86,7 @@ console.log("Session:", session.id);
 const reply = await fetch(\`\${BASE}/api/v1/chat-sessions/\${session.id}/messages\`, {
   method: "POST", headers,
   body: JSON.stringify({
-    user_message: "I'll pay $65", bot_reply: "",
+    user_message: "I'll pay ₹65", bot_reply: "",
     buyer_offer: 65, seller_counter: null, round_number: 1
   })
 }).then(r => r.json());
@@ -113,7 +113,7 @@ console.log("Session:", session.id);
 const reply = await fetch(\`\${BASE}/api/v1/chat-sessions/\${session.id}/messages\`, {
   method: "POST", headers,
   body: JSON.stringify({
-    user_message: "I'll pay $65", bot_reply: "",
+    user_message: "I'll pay ₹65", bot_reply: "",
     buyer_offer: 65, seller_counter: null, round_number: 1
   })
 }).then((r: Response) => r.json());

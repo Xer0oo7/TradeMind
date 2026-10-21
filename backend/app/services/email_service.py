@@ -117,8 +117,8 @@ def template_deal_notification(
         <table style="width:100%;border-collapse:collapse;margin:16px 0">
           <tr><td style="padding:8px 0;color:#888">Product</td><td style="padding:8px 0;font-weight:600">{product_name}</td></tr>
           <tr><td style="padding:8px 0;color:#888">Buyer</td><td style="padding:8px 0;font-weight:600">{buyer_name}</td></tr>
-          <tr><td style="padding:8px 0;color:#888">Original Price</td><td style="padding:8px 0">${original_price:,.2f}</td></tr>
-          <tr><td style="padding:8px 0;color:#888">Final Price</td><td style="padding:8px 0;font-weight:700;color:{status_color}">${final_price:,.2f}</td></tr>
+          <tr><td style="padding:8px 0;color:#888">Original Price</td><td style="padding:8px 0">₹{original_price:,.2f}</td></tr>
+          <tr><td style="padding:8px 0;color:#888">Final Price</td><td style="padding:8px 0;font-weight:700;color:{status_color}">₹{final_price:,.2f}</td></tr>
           <tr><td style="padding:8px 0;color:#888">Discount</td><td style="padding:8px 0">{discount}%</td></tr>
           <tr><td style="padding:8px 0;color:#888">Rounds</td><td style="padding:8px 0">{rounds}</td></tr>
         </table>
