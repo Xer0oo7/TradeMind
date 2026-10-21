@@ -587,8 +587,8 @@ class PricingStrategyAgent:
             "firmness_level":           firmness_level,
             "buyer_moving_up":          buyer_moving,
             # Patch 3: enriched verbalize context
-            "exact_counter_str":        f"₹{result.counter_unit_price:.2f}",
-            "exact_total_str":          f"₹{result.counter_unit_price * state.quantity:.2f}",
+            "exact_counter_str":        f"${result.counter_unit_price:.2f}",
+            "exact_total_str":          f"${result.counter_unit_price * state.quantity:.2f}",
             "exact_qty":                str(int(state.quantity)),
             "buyer_last_message":       getattr(state, '_last_buyer_message', None) or "",
             "buyer_moving_toward_counter": buyer_moving,

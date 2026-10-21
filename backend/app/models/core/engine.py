@@ -347,12 +347,12 @@ class NegotiationEngine:
         # No price found and LLM failed — varied engaging fallback
         import random
         fallback_messages = [
-            f"I'm really excited to talk to you about {session.product.product_name}! It's one of our best sellers. At ₹{current_offer} per unit, you're getting incredible value — what price were you thinking?",
+            f"I'm really excited to talk to you about {session.product.product_name}! It's one of our best sellers. At ${current_offer} per unit, you're getting incredible value — what price were you thinking?",
             f"Great question! {session.product.product_name} has been flying off the shelves lately. I'd love to work out a deal with you — go ahead and throw out a number!",
-            f"You know what, {session.product.product_name} is genuinely one of the best products we carry. The quality really speaks for itself at ₹{current_offer}. What's your budget looking like?",
-            f"I hear you! Let me tell you, customers who've bought {session.product.product_name} keep coming back for more. The value at ₹{current_offer} is hard to beat — but I'm open to discussing. What did you have in mind?",
-            f"Absolutely, let's find a deal that works for both of us! {session.product.product_name} at ₹{current_offer} is already competitive, but go ahead — give me your best offer and let's see what we can do.",
-            f"That's what I love about negotiating {session.product.product_name} — everyone wants it because the quality is outstanding. We're at ₹{current_offer} right now. What price would make you pull the trigger?",
+            f"You know what, {session.product.product_name} is genuinely one of the best products we carry. The quality really speaks for itself at ${current_offer}. What's your budget looking like?",
+            f"I hear you! Let me tell you, customers who've bought {session.product.product_name} keep coming back for more. The value at ${current_offer} is hard to beat — but I'm open to discussing. What did you have in mind?",
+            f"Absolutely, let's find a deal that works for both of us! {session.product.product_name} at ${current_offer} is already competitive, but go ahead — give me your best offer and let's see what we can do.",
+            f"That's what I love about negotiating {session.product.product_name} — everyone wants it because the quality is outstanding. We're at ${current_offer} right now. What price would make you pull the trigger?",
         ]
         return ChatResponse(
             session_id=session_id,

@@ -88,8 +88,8 @@ _QUANTITY_INTENT_RE = re.compile(
 )
 
 _EXPLICIT_PRICE_RE = re.compile(
-    r"(?:[$₹]\s*(\d+(?:\.\d{1,2})?)|"
-    r"\b(?:offer|offering|pay|price|budget|bid)\s*(?:is|of|=|:)?\s*[$₹]?\s*(\d+(?:\.\d{1,2})?))",
+    r"(?:[$]\s*(\d+(?:\.\d{1,2})?)|"
+    r"\b(?:offer|offering|pay|price|budget|bid)\s*(?:is|of|=|:)?\s*[$]?\s*(\d+(?:\.\d{1,2})?))",
     re.IGNORECASE,
 )
 
@@ -539,8 +539,8 @@ class NegotiationEngine:
 
                             confirm_msg = (
                                 f"Just to confirm \u2014 you'd like to finalize at "
-                                f"₹{last_counter:,.2f} per unit for {qty} unit(s), "
-                                f"totaling ₹{total:,.2f}? "
+                                f"${last_counter:,.2f} per unit for {qty} unit(s), "
+                                f"totaling ${total:,.2f}? "
                                 f"{_CONFIRM_MARKER}"
                             )
                             state.chat_history.append({"role": "Buyer", "text": chat_message.message})
@@ -632,8 +632,8 @@ class NegotiationEngine:
                                 total = round(base * qty, 2)
                                 confirm_msg = (
                                     f"{_FULL_PRICE_CONFIRM_MARKER} "
-                                    f"That's ₹{base:,.2f} per unit for {qty} unit(s), "
-                                    f"totaling ₹{total:,.2f}. "
+                                    f"That's ${base:,.2f} per unit for {qty} unit(s), "
+                                    f"totaling ${total:,.2f}. "
                                     f"Would you like to proceed at full price, or make a different offer? "
                                     f"{_CONFIRM_MARKER}"
                                 )
@@ -736,8 +736,8 @@ class NegotiationEngine:
             total = round(last_counter * qty, 2)
             confirm_msg = (
                 f"Just to confirm \u2014 you'd like to finalize at "
-                f"₹{last_counter:,.2f} per unit for {qty} unit(s), "
-                f"totaling ₹{total:,.2f}? "
+                f"${last_counter:,.2f} per unit for {qty} unit(s), "
+                f"totaling ${total:,.2f}? "
                 f"{_CONFIRM_MARKER}"
             )
             state.chat_history.append({"role": "Buyer", "text": chat_message.message})
@@ -760,7 +760,7 @@ class NegotiationEngine:
                 last_counter = eng.counter_history[-1]
             reject_reply = (
                 f"I understand that doesn't work for you. "
-                f"Our current offer is ₹{last_counter:,.2f} per unit. "
+                f"Our current offer is ${last_counter:,.2f} per unit. "
                 f"What price would you have in mind?"
             )
             state.chat_history.append({"role": "Buyer", "text": chat_message.message})
@@ -841,8 +841,8 @@ class NegotiationEngine:
                 total = round(base * qty, 2)
                 confirm_msg = (
                     f"{_FULL_PRICE_CONFIRM_MARKER} "
-                    f"That's ₹{base:,.2f} per unit for {qty} unit(s), "
-                    f"totaling ₹{total:,.2f}. "
+                    f"That's ${base:,.2f} per unit for {qty} unit(s), "
+                    f"totaling ${total:,.2f}. "
                     f"Would you like to proceed at full price, or make a different offer? "
                     f"{_CONFIRM_MARKER}"
                 )
@@ -886,8 +886,8 @@ class NegotiationEngine:
                     total = round(base * qty, 2)
                     confirm_msg = (
                         f"{_FULL_PRICE_CONFIRM_MARKER} "
-                        f"That's ₹{base:,.2f} per unit for {qty} unit(s), "
-                        f"totaling ₹{total:,.2f}. "
+                        f"That's ${base:,.2f} per unit for {qty} unit(s), "
+                        f"totaling ${total:,.2f}. "
                         f"Would you like to proceed at full price, or make a different offer? "
                         f"{_CONFIRM_MARKER}"
                     )
@@ -961,26 +961,26 @@ class NegotiationEngine:
             if qty > 1:
                 generic_reply = (
                     f"We're currently at {qty} unit(s) at "
-                    f"₹{last_counter:,.2f}/unit (₹{total:,.2f} total). "
+                    f"${last_counter:,.2f}/unit (${total:,.2f} total). "
                     f"Would you like to adjust the quantity or make a price offer?"
                 )
             else:
                 generic_reply = (
                     f"We're currently at {qty} unit at "
-                    f"₹{last_counter:,.2f}/unit. "
+                    f"${last_counter:,.2f}/unit. "
                     f"Would you like to adjust the quantity or make a price offer?"
                 )
         elif qty > 1:
             generic_reply = (
                 f"Thank you for your interest in {session.product.product_name}! "
-                f"Our current offer is ₹{last_counter:,.2f} per unit "
-                f"(₹{total:,.2f} for {qty} units). "
+                f"Our current offer is ${last_counter:,.2f} per unit "
+                f"(${total:,.2f} for {qty} units). "
                 f"Feel free to make a specific price offer."
             )
         else:
             generic_reply = (
                 f"Thank you for your interest in {session.product.product_name}! "
-                f"Our current offer is ₹{last_counter:,.2f} per unit. "
+                f"Our current offer is ${last_counter:,.2f} per unit. "
                 f"Feel free to make a specific price offer."
             )
         state.chat_history.append({"role": "Buyer", "text": chat_message.message})
@@ -1055,8 +1055,8 @@ class NegotiationEngine:
 
         qty_msg = (
             f"Updated to {new_qty} unit(s). "
-            f"Our current offer is ₹{per_unit:.2f} per unit "
-            f"(₹{per_unit * new_qty:.2f} total for {new_qty} units). "
+            f"Our current offer is ${per_unit:.2f} per unit "
+            f"(${per_unit * new_qty:.2f} total for {new_qty} units). "
             f"What price would you like to offer?"
         )
         state.chat_history.append({"role": "Buyer", "text": chat_message.message})

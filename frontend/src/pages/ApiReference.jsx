@@ -527,11 +527,10 @@ export default function ApiReference() {
                     <button
                       key={s.id}
                       onClick={() => scrollToSection(s.id)}
-                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold uppercase tracking-wide border-[2px] border-neo-navy transition-all whitespace-nowrap ${
-                        activeSection === s.id
+                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold uppercase tracking-wide border-[2px] border-neo-navy transition-all whitespace-nowrap ${activeSection === s.id
                           ? 'bg-neo-navy text-neo-cream'
                           : 'bg-neo-cream text-neo-navy hover:bg-neo-orange hover:translate-x-[1px] hover:translate-y-[1px]'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-4 h-4 flex-shrink-0" />
                       {s.label}
@@ -563,7 +562,7 @@ export default function ApiReference() {
                       Multi-Agent Architecture
                     </h3>
                     <p className="text-neo-navy/70 text-sm leading-relaxed mb-4">
-                      TradeMind uses a three-agent pipeline for every negotiation turn. No single LLM call makes pricing decisions — 
+                      TradeMind uses a three-agent pipeline for every negotiation turn. No single LLM call makes pricing decisions —
                       the pricing agent is fully deterministic and auditable.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

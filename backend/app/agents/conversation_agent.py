@@ -367,7 +367,7 @@ class ConversationAgent:
         # Append total when multi-unit
         if context.quantity > 1 and decision.accepted_price is not None:
             total = decision.accepted_price * context.quantity
-            msg = msg.rstrip('.') + f" (₹{self._format_price(total)} total)."
+            msg = msg.rstrip('.') + f" (${self._format_price(total)} total)."
         return msg
     
     def _generate_reject(
@@ -397,7 +397,7 @@ class ConversationAgent:
         # Append total when multi-unit
         if context.quantity > 1 and decision.counter_offer_price is not None:
             total = decision.counter_offer_price * context.quantity
-            msg += f" That's ₹{self._format_price(total)} total for {context.quantity} units."
+            msg += f" That's ${self._format_price(total)} total for {context.quantity} units."
         return msg
     
     def _generate_constraint_violation(
