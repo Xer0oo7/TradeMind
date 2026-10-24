@@ -206,6 +206,116 @@ async def register(request: Request, body: RegisterRequest):
             )
             user_id = cur.lastrowid
 
+            # Auto-seed starter products for new account
+            starter_products = [
+                ("Wireless Earbuds", 2499.00, 1100.00, 1400.00, 0.0, "MAX_PROFIT", 10, "Electronics"),
+                ("Smart LED Bulb", 899.00, 350.00, 450.00, 0.0, "MAX_PROFIT", 8, "Electronics"),
+                ("Organic Coffee Beans (1kg)", 1299.00, 650.00, 800.00, 0.0, "MAX_PROFIT", 10, "Consumables"),
+                ("Fitness Band", 3999.00, 2200.00, 2600.00, 0.0, "MAX_PROFIT", 10, "Electronics"),
+                ("Cloud Storage Subscription", 299.00, 80.00, 120.00, 0.0, "MAX_PROFIT", 8, "Services"),
+                ("Office Chair (Ergonomic)", 7499.00, 4200.00, 4999.00, 5.0, "MIN_LOSS", 10, "Furniture"),
+                ("Bluetooth Speaker", 1999.00, 950.00, 1200.00, 0.0, "MAX_PROFIT", 10, "Electronics"),
+                ("Online Course Access", 999.00, 150.00, 300.00, 0.0, "MAX_PROFIT", 6, "Services"),
+                ("Mechanical Keyboard", 4499.00, 2100.00, 2799.00, 0.0, "MAX_PROFIT", 10, "Electronics"),
+                ("Premium Widget", 100.00, 40.00, 55.00, 0.0, "MAX_PROFIT", 10, "General"),
+            ]
+            for prod in starter_products:
+                await cur.execute(
+                    """INSERT INTO products (
+                        user_id, name, base_price, cost_price, min_acceptable_price,
+                        max_loss_percent, mode, max_rounds, category, status
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (user_id, *prod, "active"),
+                )
+
+            # Auto-seed demo negotiation sessions so Dashboard shows real data
+            import random as _random
+            from datetime import datetime as _dt, timedelta as _td
+            _demo_sessions = [
+                ("Wireless Earbuds","MAX_PROFIT",2499,1100,1400,10,3,"accepted",2199.00,1,2199,2249,[
+                    (1,"Can you do 1800 for earbuds?","Best we can do today is 2350.",1800,2350,"counter"),
+                    (2,"How about 2100?","Meet me at 2249 with free shipping?",2100,2249,"counter"),
+                    (3,"Fine — 2199.","Accepted at 2199!",2199,2199,"accept"),
+                ]),
+                ("Mechanical Keyboard","MAX_PROFIT",4499,2100,2799,10,3,"accepted",3899.00,1,3899,3999,[
+                    (1,"3200 for the keyboard?","Floor is 4199 for this model.",3200,4199,"counter"),
+                    (2,"3700 is my max.","How about 3999?",3700,3999,"counter"),
+                    (3,"3899 final.","Accepted at 3899!",3899,3899,"accept"),
+                ]),
+                ("Office Chair (Ergonomic)","MIN_LOSS",7499,4200,4999,10,2,"accepted",6499.00,1,6499,6799,[
+                    (1,"6000 for chair?","We can do 6799 with warranty.",6000,6799,"counter"),
+                    (2,"6499 today.","Done! 6499 accepted.",6499,6499,"accept"),
+                ]),
+                ("Organic Coffee Beans (1kg)","MAX_PROFIT",1299,650,800,10,2,"accepted",1099.00,1,1099,1149,[
+                    (1,"1000 for the coffee?","Minimum is 1149 for single-origin.",1000,1149,"counter"),
+                    (2,"1099 and I order now.","Deal!",1099,1099,"accept"),
+                ]),
+                ("Cloud Storage Subscription","MAX_PROFIT",299,80,120,8,1,"accepted",249.00,1,249,269,[
+                    (1,"249/month with annual plan?","Yes — 249 for yearly commitment!",249,249,"accept"),
+                ]),
+                ("Online Course Access","MAX_PROFIT",999,150,300,6,2,"accepted",799.00,1,799,849,[
+                    (1,"700 student discount?","849 is our student rate.",700,849,"counter"),
+                    (2,"799 works for me.","799 confirmed — lifetime access!",799,799,"accept"),
+                ]),
+                ("Smart LED Bulb","MAX_PROFIT",899,350,450,8,3,"accepted",749.00,1,749,799,[
+                    (1,"500 for the bulb?","Below margin — best is 799.",500,799,"counter"),
+                    (2,"700?","Meet at 749.",700,749,"counter"),
+                    (3,"749 done.","Accepted!",749,749,"accept"),
+                ]),
+                ("Fitness Band","MAX_PROFIT",3999,2200,2600,10,3,"rejected",None,0,2100,3199,[
+                    (1,"2000 for the band?","Below cost — best is 3499.",2000,3499,"counter"),
+                    (2,"2100 max.","Cannot go below 3199.",2100,3199,"counter"),
+                    (3,"2100 only.","We must decline. Thank you!",2100,3199,"reject"),
+                ]),
+                ("Bluetooth Speaker","MAX_PROFIT",1999,950,1200,10,3,"walked_away",None,0,1100,1599,[
+                    (1,"1000 for the speaker?","Below margin — best is 1699.",1000,1699,"counter"),
+                    (2,"1100?","Can do 1599.",1100,1599,"counter"),
+                    (3,"Never mind.","Feel free to return anytime!",1100,1599,"walked_away"),
+                ]),
+                ("Premium Widget","MAX_PROFIT",100,40,55,10,1,"active",None,0,75,90,[
+                    (1,"75 for 10 units?","We can do 90 each for bulk.",75,90,"counter"),
+                ]),
+            ]
+            for sess in _demo_sessions:
+                pname,mode,bp,cp,mp,maxr,used,status,fp,closed_flag,bl,sl,msgs = sess
+                _created = _dt.utcnow() - _td(days=_random.randint(1,12), hours=_random.randint(1,8))
+                _closed_at = _created + _td(minutes=_random.randint(5,25)) if status != "active" else None
+                await cur.execute(
+                    """INSERT INTO chat_sessions
+                    (user_id,product_name,mode,base_price,cost_price,min_price,max_rounds,rounds_used,
+                     status,final_price,final_decision,deal_closed,buyer_last_offer,seller_last_offer,
+                     created_at,closed_at)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    (user_id,pname,mode,bp,cp,mp,maxr,used,status,fp,
+                     status if status != "active" else None,
+                     closed_flag,bl,sl,_created,_closed_at),
+                )
+                _sid = cur.lastrowid
+                for rn,um,br,op,cpr,dec in msgs:
+                    await cur.execute(
+                        """INSERT INTO chat_messages
+                        (session_id,user_id,round_number,user_message,bot_reply,
+                         offered_price,counter_price,decision,created_at)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                        (_sid,user_id,rn,um,br,op,cpr,dec,_created+_td(minutes=rn*2)),
+                    )
+            # Update product aggregates
+            await cur.execute(
+                """UPDATE products p SET
+                    total_sessions=(SELECT COUNT(*) FROM chat_sessions cs
+                        WHERE cs.user_id=p.user_id AND cs.product_name=p.name),
+                    accepted_deals=(SELECT COUNT(*) FROM chat_sessions cs
+                        WHERE cs.user_id=p.user_id AND cs.product_name=p.name AND cs.deal_closed=1),
+                    revenue=COALESCE((SELECT SUM(final_price) FROM chat_sessions cs
+                        WHERE cs.user_id=p.user_id AND cs.product_name=p.name AND cs.deal_closed=1),0),
+                    avg_margin=COALESCE((SELECT AVG(((final_price-p.cost_price)/final_price)*100)
+                        FROM chat_sessions cs WHERE cs.user_id=p.user_id
+                        AND cs.product_name=p.name AND cs.deal_closed=1),0)
+                WHERE p.user_id=%s""",
+                (user_id,),
+            )
+
+
     token = _create_token(user_id, body.email, body.full_name)
     return AuthResponse(
         token=token,

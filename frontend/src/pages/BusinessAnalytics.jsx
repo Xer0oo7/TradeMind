@@ -5,13 +5,14 @@ import {
   AlertTriangle, FileText,
   Brain, IndianRupee, TrendingUp, TrendingDown, ShoppingCart, Package,
   Percent, Activity, Zap, Info, Calculator,
-  Sparkles, Target, Shield, Search, Lightbulb, PlusCircle, Tag, Settings
+  Sparkles, Target, Shield, Search, Lightbulb, PlusCircle, Tag, Settings,
+  Database, ChevronDown
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import NeoCard from '../components/NeoCard';
 import NeoButton from '../components/NeoButton';
 import { calculateAnalytics, getCompetitiveAnalysis, getAnalyticsHealth, getAuthToken } from '../lib/api';
-import { createProduct } from '../lib/productStore';
+import { createProduct, getProducts } from '../lib/productStore';
 import { useI18n } from '../context/I18nContext';
 
 // ─── Default form values ─────────────────────────────────────────
@@ -73,13 +74,71 @@ export default function BusinessAnalytics() {
   const [addProductMsg, setAddProductMsg] = useState(null);
   const resultsRef = useRef(null);
 
-  // ─── Stats derived from analytics response ───────────────────
+  // ─── DB Products for quick-load ──────────────────────────────
+  const [dbProducts, setDbProducts] = useState([]);
+  const [showDbPicker, setShowDbPicker] = useState(false);
+
+  useEffect(() => {
+    getProducts()
+      .then(prods => setDbProducts(prods || []))
+      .catch(() => {});
+  }, []);
+
+  const loadFromDbProduct = (p) => {
+    setProduct({
+      product_name: p.name || '',
+      product_description: p.description || '',
+      category: p.category || 'General',
+      mode: p.mode || 'MAX_PROFIT',
+      max_rounds: String(p.maxRounds || 10),
+      max_loss_percent: String(p.maxLossPercent || 0),
+      cost_price: String(p.costPrice || ''),
+      selling_price: String(p.basePrice || ''),
+      min_acceptable_price: String(p.minAcceptablePrice || ''),
+      initial_stock: '100',
+      platform_fee_percent: '0',
+      shipping_cost: '0',
+      marketing_cost: '0',
+    });
+    setAnalyticsData(null);
+    setCompetitiveData(null);
+    setError(null);
+    setShowDbPicker(false);
+
+    // Auto-calculate analytics on selection if prices exist
+    const cp = parseFloat(p.costPrice);
+    const sp = parseFloat(p.basePrice);
+    if (cp > 0 && sp > 0) {
+      calculateAnalytics({
+        product: {
+          cost_price: cp,
+          selling_price: sp,
+          initial_stock: 100,
+          platform_fee_percent: 0,
+          shipping_cost: 0,
+          marketing_cost: 0,
+        },
+        performance: { chats: 0, orders: 0, units_sold: 0, returns: 0 },
+      })
+        .then(res => setAnalyticsData(res))
+        .catch(() => {});
+    }
+  };
+
+  // ─── Stats derived from analytics response or product prices ───
   const stats = analyticsData
     ? {
         revenue:    `₹${Number(analyticsData.summary_metrics.gross_revenue).toLocaleString()}`,
         profit:     `₹${Number(analyticsData.summary_metrics.profit_or_loss).toLocaleString()}`,
         margin:     `${Number(analyticsData.summary_metrics.profit_margin_percent).toFixed(1)}%`,
         conversion: `${Number(analyticsData.summary_metrics.conversion_rate).toFixed(1)}%`,
+      }
+    : (product.selling_price && product.cost_price && parseFloat(product.cost_price) > 0)
+    ? {
+        revenue:    `₹${((parseFloat(product.selling_price) || 0) * (parseFloat(product.initial_stock) || 100)).toLocaleString()}`,
+        profit:     `₹${(((parseFloat(product.selling_price) || 0) - (parseFloat(product.cost_price) || 0)) * (parseFloat(product.initial_stock) || 100)).toLocaleString()}`,
+        margin:     `${(((parseFloat(product.selling_price) - parseFloat(product.cost_price)) / (parseFloat(product.selling_price) || 1)) * 100).toFixed(1)}%`,
+        conversion: '0%',
       }
     : { revenue: '₹0', profit: '₹0', margin: '0%', conversion: '0%' };
 
@@ -221,15 +280,38 @@ export default function BusinessAnalytics() {
     }
     setCompLoading(true);
     setError(null);
+    setActiveTab('competitive');
+    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+
+    // Auto-calculate standard analytics concurrently if cost & selling prices are filled
+    const costPrice = parseFloat(product.cost_price);
+    const sellingPrice = parseFloat(product.selling_price);
+    const initialStock = parseInt(product.initial_stock) || 100;
+    if (costPrice > 0 && sellingPrice > 0 && !analyticsData) {
+      calculateAnalytics({
+        product: {
+          cost_price: costPrice,
+          selling_price: sellingPrice,
+          initial_stock: initialStock,
+          platform_fee_percent: parseFloat(product.platform_fee_percent) || 0,
+          shipping_cost: parseFloat(product.shipping_cost) || 0,
+          marketing_cost: parseFloat(product.marketing_cost) || 0,
+        },
+        performance: { chats: 0, orders: 0, units_sold: 0, returns: 0 },
+      })
+        .then(res => setAnalyticsData(res))
+        .catch(err => console.warn('Background analytics calculation skipped:', err));
+    }
+
     try {
       const result = await getCompetitiveAnalysis({
         product_name: product.product_name.trim(),
-        product_description: product.product_description.trim() || null,
+        product_description: product.product_description?.trim() || null,
         category: product.category || 'General',
         my_price: parseFloat(product.selling_price) || 0,
       });
       setCompetitiveData(result);
-      setActiveTab('charts');
+      setActiveTab('competitive');
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     } catch (err) {
       console.error('Competitive analysis failed:', err);
@@ -301,6 +383,271 @@ export default function BusinessAnalytics() {
     );
   };
 
+  // ─── Reusable Competitive UI Renderer ─────────────────────────
+  const renderCompetitiveUI = () => {
+    if (!competitiveData) return null;
+    return (
+      <div className="space-y-3">
+        {/* Market Position */}
+        <NeoCard className="p-3 sm:p-4 mb-3">
+          <p className="text-sm sm:text-base font-bold text-neo-navy/60 uppercase mb-2">Your Market Position</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="p-2 bg-neo-navy text-center">
+              <p className="text-neo-cream/60 text-[8px] uppercase">Position</p>
+              <p className="text-neo-orange font-bold text-xs capitalize">
+                {competitiveData.my_position.position.replace('_', ' ')}
+              </p>
+            </div>
+            <div className="p-2 bg-neo-navy text-center">
+              <p className="text-neo-cream/60 text-[8px] uppercase">vs Market Avg</p>
+              <p className={`font-bold text-xs ${
+                competitiveData.my_position.price_vs_market_avg_percent <= 0 ? 'text-neo-teal' : 'text-neo-maroon'
+              }`}>
+                {competitiveData.my_position.price_vs_market_avg_percent > 0 ? '+' : ''}
+                {competitiveData.my_position.price_vs_market_avg_percent.toFixed(1)}%
+              </p>
+            </div>
+            <div className="p-2 bg-neo-navy text-center">
+              <p className="text-neo-cream/60 text-[8px] uppercase">Rank</p>
+              <p className="text-neo-cream font-bold text-xs">
+                {competitiveData.my_position.rank_estimate}
+              </p>
+            </div>
+            <div className="p-2 bg-neo-navy text-center">
+              <p className="text-neo-cream/60 text-[8px] uppercase">Competitors</p>
+              <p className="text-neo-cream font-bold text-xs">
+                {competitiveData.meta.competitor_count}
+              </p>
+            </div>
+          </div>
+        </NeoCard>
+
+        {/* Market Summary */}
+        <NeoCard className="p-3 sm:p-4 mb-3">
+          <p className="text-sm sm:text-base font-bold text-neo-navy/60 uppercase mb-2">Market Prices</p>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="text-center">
+              <p className="text-[8px] text-neo-navy/50 uppercase">Min</p>
+              <p className="font-bold text-neo-teal text-sm">₹{competitiveData.market_summary.min_price}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[8px] text-neo-navy/50 uppercase">Avg</p>
+              <p className="font-bold text-neo-navy text-sm">₹{competitiveData.market_summary.avg_market_price.toFixed(0)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[8px] text-neo-navy/50 uppercase">Median</p>
+              <p className="font-bold text-neo-navy text-sm">₹{competitiveData.market_summary.median_price}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[8px] text-neo-navy/50 uppercase">Max</p>
+              <p className="font-bold text-neo-maroon text-sm">₹{competitiveData.market_summary.max_price}</p>
+            </div>
+          </div>
+        </NeoCard>
+
+        {/* Competitor Samples */}
+        {competitiveData.competitor_sample?.length > 0 && (
+          <NeoCard className="p-3 sm:p-4">
+            <p className="text-sm sm:text-base font-bold text-neo-navy/60 uppercase mb-2">Top Competitors</p>
+            <div className="space-y-2">
+              {competitiveData.competitor_sample.map((comp, i) => (
+                <div key={i} className="flex items-center justify-between p-2 border-[2px] border-neo-navy/10 hover:border-neo-navy/30 transition-all">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-neo-navy truncate">{comp.title}</p>
+                    <p className="text-[10px] text-neo-navy/50">
+                      {comp.rating && `★ ${comp.rating}`}
+                      {comp.review_count && ` (${comp.review_count} reviews)`}
+                    </p>
+                  </div>
+                  <div className="text-right ml-2">
+                    <p className="font-bold text-sm text-neo-navy">₹{comp.price}</p>
+                    <p className={`text-[10px] font-bold ${
+                      comp.price_vs_mine < 0 ? 'text-neo-teal' : comp.price_vs_mine > 0 ? 'text-neo-maroon' : 'text-neo-navy/50'
+                    }`}>
+                      {comp.price_vs_mine > 0 ? '+' : ''}{comp.price_vs_mine.toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </NeoCard>
+        )}
+
+        {/* ─── AI-Powered Deep Analysis ─────────────── */}
+        {competitiveData.llm_analysis && (
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-neo-orange flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-neo-navy" />
+              </div>
+              <div>
+                <p className="text-base sm:text-lg font-bold text-neo-navy">AI Deep Analysis</p>
+                <p className="text-[10px] text-neo-navy/50">Powered by Gemini</p>
+              </div>
+            </div>
+
+            {/* Executive Summary */}
+            {competitiveData.llm_analysis.executive_summary && (
+              <NeoCard className="p-3 sm:p-4 border-l-4 border-neo-orange">
+                <p className="text-[10px] sm:text-xs uppercase font-bold text-neo-navy/60 mb-1 flex items-center gap-1">
+                  <FileText className="w-3 h-3" />
+                  Executive Summary
+                </p>
+                <p className="text-xs sm:text-sm text-neo-navy leading-relaxed">
+                  {competitiveData.llm_analysis.executive_summary}
+                </p>
+              </NeoCard>
+            )}
+
+            {/* Pricing Strategy + Recommended Price */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {competitiveData.llm_analysis.pricing_strategy && (
+                <NeoCard className="p-3 sm:p-4">
+                  <p className="text-[10px] sm:text-xs uppercase font-bold text-neo-navy/60 mb-1 flex items-center gap-1">
+                    <Target className="w-3 h-3" />
+                    Pricing Strategy
+                  </p>
+                  <p className="text-xs sm:text-sm text-neo-navy">
+                    {competitiveData.llm_analysis.pricing_strategy}
+                  </p>
+                </NeoCard>
+              )}
+              {competitiveData.llm_analysis.recommended_price != null && (
+                <NeoCard className="p-3 sm:p-4 bg-neo-teal/10 border-[2px] border-neo-teal">
+                  <p className="text-[10px] sm:text-xs uppercase font-bold text-neo-teal mb-1 flex items-center gap-1">
+                    <IndianRupee className="w-3 h-3" />
+                    AI Recommended Price
+                  </p>
+                  <p className="text-2xl sm:text-3xl font-black text-neo-teal">
+                    ₹{Number(competitiveData.llm_analysis.recommended_price).toLocaleString()}
+                  </p>
+                  <p className="text-[10px] text-neo-navy/50 mt-1">
+                    Based on market data & AI analysis
+                  </p>
+                </NeoCard>
+              )}
+            </div>
+
+            {/* SWOT Grid */}
+            {(competitiveData.llm_analysis.strengths?.length > 0 || competitiveData.llm_analysis.weaknesses?.length > 0 || competitiveData.llm_analysis.opportunities?.length > 0 || competitiveData.llm_analysis.threats?.length > 0) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {competitiveData.llm_analysis.strengths?.length > 0 && (
+                  <NeoCard className="p-3 border-l-4 border-neo-teal">
+                    <p className="text-[10px] uppercase font-bold text-neo-teal mb-2 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" /> Strengths
+                    </p>
+                    <ul className="space-y-1">
+                      {competitiveData.llm_analysis.strengths.map((s, i) => (
+                        <li key={i} className="text-[11px] sm:text-xs text-neo-navy flex items-start gap-1.5">
+                          <span className="text-neo-teal mt-0.5">▸</span> {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </NeoCard>
+                )}
+                {competitiveData.llm_analysis.weaknesses?.length > 0 && (
+                  <NeoCard className="p-3 border-l-4 border-neo-maroon">
+                    <p className="text-[10px] uppercase font-bold text-neo-maroon mb-2 flex items-center gap-1">
+                      <XCircle className="w-3 h-3" /> Weaknesses
+                    </p>
+                    <ul className="space-y-1">
+                      {competitiveData.llm_analysis.weaknesses.map((w, i) => (
+                        <li key={i} className="text-[11px] sm:text-xs text-neo-navy flex items-start gap-1.5">
+                          <span className="text-neo-maroon mt-0.5">▸</span> {w}
+                        </li>
+                      ))}
+                    </ul>
+                  </NeoCard>
+                )}
+                {competitiveData.llm_analysis.opportunities?.length > 0 && (
+                  <NeoCard className="p-3 border-l-4 border-neo-orange">
+                    <p className="text-[10px] uppercase font-bold text-neo-orange mb-2 flex items-center gap-1">
+                      <Lightbulb className="w-3 h-3" /> Opportunities
+                    </p>
+                    <ul className="space-y-1">
+                      {competitiveData.llm_analysis.opportunities.map((o, i) => (
+                        <li key={i} className="text-[11px] sm:text-xs text-neo-navy flex items-start gap-1.5">
+                          <span className="text-neo-orange mt-0.5">▸</span> {o}
+                        </li>
+                      ))}
+                    </ul>
+                  </NeoCard>
+                )}
+                {competitiveData.llm_analysis.threats?.length > 0 && (
+                  <NeoCard className="p-3 border-l-4 border-neo-navy">
+                    <p className="text-[10px] uppercase font-bold text-neo-navy mb-2 flex items-center gap-1">
+                      <Shield className="w-3 h-3" /> Threats
+                    </p>
+                    <ul className="space-y-1">
+                      {competitiveData.llm_analysis.threats.map((th, i) => (
+                        <li key={i} className="text-[11px] sm:text-xs text-neo-navy flex items-start gap-1.5">
+                          <span className="text-neo-navy mt-0.5">▸</span> {th}
+                        </li>
+                      ))}
+                    </ul>
+                  </NeoCard>
+                )}
+              </div>
+            )}
+
+            {/* Action Items */}
+            {competitiveData.llm_analysis.action_items?.length > 0 && (
+              <NeoCard className="p-3 sm:p-4 bg-neo-navy">
+                <p className="text-[10px] sm:text-xs uppercase font-bold text-neo-orange mb-2 flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> Action Items
+                </p>
+                <ol className="space-y-1.5">
+                  {competitiveData.llm_analysis.action_items.map((a, i) => (
+                    <li key={i} className="text-[11px] sm:text-xs text-neo-cream flex items-start gap-2">
+                      <span className="bg-neo-orange text-neo-navy font-black text-[10px] w-5 h-5 flex items-center justify-center flex-shrink-0">
+                        {i + 1}
+                      </span>
+                      {a}
+                    </li>
+                  ))}
+                </ol>
+              </NeoCard>
+            )}
+
+            {/* Market Analysis Paragraph */}
+            {competitiveData.llm_analysis.market_analysis && (
+              <NeoCard className="p-3 sm:p-4">
+                <p className="text-[10px] sm:text-xs uppercase font-bold text-neo-navy/60 mb-1 flex items-center gap-1">
+                  <Brain className="w-3 h-3" />
+                  Detailed Market Analysis
+                </p>
+                <p className="text-xs sm:text-sm text-neo-navy/80 leading-relaxed whitespace-pre-line">
+                  {competitiveData.llm_analysis.market_analysis}
+                </p>
+              </NeoCard>
+            )}
+
+            {/* Data Sources Footer */}
+            <div className="flex items-center gap-2 text-[10px] text-neo-navy/40">
+              <Info className="w-3 h-3" />
+              <span>
+                Sources: {competitiveData.meta?.sources_used?.join(', ') || 'N/A'}
+                {' · '}
+                {competitiveData.meta?.competitor_count || 0} competitors analyzed
+                {competitiveData.meta?.llm_analysis_available && ' · AI analysis included'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Fallback if no LLM analysis */}
+        {!competitiveData.llm_analysis && competitiveData.meta && (
+          <div className="mt-3 p-3 bg-neo-navy/5 border-[2px] border-dashed border-neo-navy/20">
+            <p className="text-[10px] sm:text-xs text-neo-navy/50 flex items-center gap-1">
+              <Info className="w-3 h-3" />
+              AI deep analysis was not available for this query. Rule-based insights are shown in the Insights tab.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // ─── Input field helper (defined outside component) ────────
 
   return (
@@ -346,6 +693,49 @@ export default function BusinessAnalytics() {
               </div>
             </div>
           </div>
+
+          {/* ───── Load from DB banner ──────────────────────────── */}
+          {dbProducts.length > 0 && (
+            <div className="mb-4 sm:mb-6 relative">
+              <button
+                onClick={() => setShowDbPicker(v => !v)}
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-white border-[3px] border-neo-navy hover:bg-neo-teal/5 transition-colors"
+              >
+                <span className="flex items-center gap-2 font-bold text-sm text-neo-navy">
+                  <Database className="w-4 h-4 text-neo-teal" />
+                  Load from My Products
+                  <span className="px-1.5 py-0.5 text-[10px] font-bold bg-neo-teal text-neo-cream">
+                    {dbProducts.length}
+                  </span>
+                </span>
+                <ChevronDown className={`w-4 h-4 text-neo-navy transition-transform ${showDbPicker ? 'rotate-180' : ''}`} />
+              </button>
+              {showDbPicker && (
+                <div className="absolute left-0 right-0 top-full z-30 bg-white border-[3px] border-t-0 border-neo-navy max-h-64 overflow-y-auto shadow-[4px_4px_0_0_#1a1a2e]">
+                  {dbProducts.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => loadFromDbProduct(p)}
+                      className="w-full text-left px-4 py-3 hover:bg-neo-orange/10 border-b border-neo-navy/10 last:border-0 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-sm text-neo-navy">{p.name}</p>
+                          <p className="text-[11px] text-neo-navy/50 mt-0.5">
+                            {p.category} · {p.mode === 'MAX_PROFIT' ? 'Max Profit' : 'Min Loss'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-black text-neo-teal text-sm">₹{Number(p.basePrice).toLocaleString()}</p>
+                          <p className="text-[10px] text-neo-navy/40">cost ₹{Number(p.costPrice).toLocaleString()}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ───── Stats Bar ─────────────────────────────────────── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-8">
@@ -769,23 +1159,34 @@ export default function BusinessAnalytics() {
             <NeoCard className="overflow-hidden">
               {/* Tab Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-neo-navy/5 p-2 sm:p-4 border-b-[2px] sm:border-b-[3px] border-neo-navy">
-                <div className="flex gap-1 mb-2 sm:mb-0">
-                  {['metrics', 'charts', 'insights'].map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`px-2 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-xs font-bold uppercase border-[2px] transition-all ${
-                        activeTab === tab
-                          ? 'bg-neo-navy text-neo-cream border-neo-navy'
-                          : 'bg-neo-cream text-neo-navy border-neo-navy/30 hover:border-neo-navy'
-                      }`}
-                    >
-                      {tab === 'metrics' && <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />}
-                      {tab === 'charts' && <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />}
-                      {tab === 'insights' && <Zap className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />}
-                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                    </button>
-                  ))}
+                <div className="flex flex-wrap gap-1 mb-2 sm:mb-0">
+                  {[
+                    { id: 'metrics', label: 'Metrics', icon: BarChart3 },
+                    { id: 'charts', label: 'Charts', icon: TrendingUp },
+                    { id: 'competitive', label: 'AI Intelligence', icon: Brain, badge: competitiveData ? `${competitiveData.competitor_sample?.length || 0}` : null },
+                    { id: 'insights', label: 'Insights', icon: Zap },
+                  ].map(tab => {
+                    const Icon = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-2 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-xs font-bold uppercase border-[2px] transition-all flex items-center gap-1.5 ${
+                          activeTab === tab.id
+                            ? 'bg-neo-navy text-neo-cream border-neo-navy'
+                            : 'bg-neo-cream text-neo-navy border-neo-navy/30 hover:border-neo-navy'
+                        }`}
+                      >
+                        <Icon className="w-3 h-3 sm:w-4 sm:h-4 inline" />
+                        {tab.label}
+                        {tab.badge != null && (
+                          <span className="px-1.5 py-0.2 bg-neo-orange text-neo-navy text-[9px] font-black">
+                            {tab.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Insight severity filter pills (only on insights tab) */}
@@ -808,28 +1209,47 @@ export default function BusinessAnalytics() {
                 )}
               </div>
 
-                {/* Tab Content */}
                 <div className="p-2 sm:p-4">
-                  {!analyticsData ? (
-                    <div className="h-40 sm:h-64 flex items-center justify-center text-neo-navy/40 border-[2px] sm:border-[3px] border-dashed border-neo-navy/30">
-                      <div className="text-center">
-                        <BarChart3 className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 opacity-50" />
-                        <p className="text-xs sm:text-sm">Enter your product data and hit Calculate</p>
-                        <p className="text-[10px] sm:text-xs text-neo-navy/30 mt-1">Fill in the form above to get started</p>
+                  {compLoading ? (
+                    <div className="py-12 sm:py-16 flex items-center justify-center">
+                      <div className="text-center max-w-md mx-auto px-4">
+                        <div className="w-12 h-12 border-4 border-neo-orange border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-neo-orange/20 border-2 border-neo-orange text-neo-orange font-bold text-xs uppercase mb-2">
+                          <Brain className="w-4 h-4 animate-pulse" />
+                          AI Agent Active
+                        </div>
+                        <h4 className="font-black text-neo-navy text-base sm:text-lg mb-1">
+                          Scraping Live Competitor Listings & Analyzing Market
+                        </h4>
+                        <p className="text-neo-navy/60 text-xs sm:text-sm">
+                          Extracting real-time pricing from Amazon & Flipkart for &ldquo;{product.product_name}&rdquo;, determining price spread, and generating Gemini strategic assessment...
+                        </p>
                       </div>
                     </div>
                   ) : loading ? (
-                    <div className="h-40 sm:h-64 flex items-center justify-center">
+                    <div className="py-12 sm:py-16 flex items-center justify-center">
                       <div className="text-center">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 border-3 sm:border-4 border-neo-teal border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                        <p className="text-neo-navy/60 text-xs sm:text-sm">Crunching numbers...</p>
+                        <p className="text-neo-navy/60 text-xs sm:text-sm font-bold">Crunching numbers...</p>
+                        <p className="text-neo-navy/40 text-xs mt-1">Calculating gross revenue, net margin, and unit economics</p>
+                      </div>
+                    </div>
+                  ) : (!analyticsData && !competitiveData) ? (
+                    <div className="h-40 sm:h-64 flex items-center justify-center text-neo-navy/40 border-[2px] sm:border-[3px] border-dashed border-neo-navy/30">
+                      <div className="text-center max-w-sm px-4">
+                        <BarChart3 className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 opacity-50" />
+                        <p className="text-xs sm:text-sm font-bold text-neo-navy/70">No analytics loaded yet</p>
+                        <p className="text-[10px] sm:text-xs text-neo-navy/40 mt-1">
+                          Select a product from <strong>&quot;Load from My Products&quot;</strong> above, then hit <strong>&quot;Calculate Analytics&quot;</strong> or <strong>&quot;Run AI Competitive Analysis&quot;</strong>.
+                        </p>
                       </div>
                     </div>
                   ) : (
                     <>
                       {/* ─── METRICS TAB ────────────────────────────── */}
                       {activeTab === 'metrics' && (
-                        <div className="space-y-3 sm:space-y-4">
+                        analyticsData ? (
+                          <div className="space-y-3 sm:space-y-4">
 
                           {/* Profit Status Banner */}
                           {analyticsData.meta.is_profitable && (
@@ -985,10 +1405,22 @@ export default function BusinessAnalytics() {
                             </div>
                           )}
                         </div>
-                      )}
+                      ) : (
+                        <div className="py-12 text-center border-[2px] border-dashed border-neo-navy/30">
+                          <Calculator className="w-10 h-10 mx-auto mb-2 text-neo-teal/50" />
+                          <p className="font-bold text-sm text-neo-navy">Financial Metrics Not Calculated Yet</p>
+                          <p className="text-xs text-neo-navy/60 mt-1 mb-4">Click Calculate Analytics to generate full revenue & profit metrics</p>
+                          <NeoButton onClick={handleCalculate} variant="teal" className="!py-2 !px-5 !text-xs font-bold">
+                            <Calculator className="w-4 h-4 mr-1.5" />
+                            Calculate Analytics
+                          </NeoButton>
+                        </div>
+                      )
+                    )}
 
-                      {/* ─── CHARTS TAB ─────────────────────────────── */}
-                      {activeTab === 'charts' && (
+                    {/* ─── CHARTS TAB ─────────────────────────────── */}
+                    {activeTab === 'charts' && (
+                      analyticsData ? (
                         <div className="space-y-4">
                           <div className="flex items-center gap-2 mb-4">
                             <div className="w-8 h-8 bg-neo-orange flex items-center justify-center">
@@ -1107,281 +1539,65 @@ export default function BusinessAnalytics() {
                             </div>
                           </div>
 
-                          {/* Competitive Analysis Results */}
+                          {/* Embedded Competitive Analysis Results if available */}
                           {competitiveData && (
-                            <div className="mt-4">
+                            <div className="mt-4 pt-4 border-t-2 border-neo-navy/10">
                               <p className="text-[10px] sm:text-xs uppercase font-bold text-neo-navy/60 mb-2 flex items-center gap-1">
                                 <Brain className="w-3 h-3" />
                                 Competitive Intelligence
                               </p>
-
-                              {/* Market Position */}
-                              <NeoCard className="p-3 sm:p-4 mb-3">
-                                <p className="text-sm sm:text-base font-bold text-neo-navy/60 uppercase mb-2">Your Market Position</p>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                  <div className="p-2 bg-neo-navy text-center">
-                                    <p className="text-neo-cream/60 text-[8px] uppercase">Position</p>
-                                    <p className="text-neo-orange font-bold text-xs capitalize">
-                                      {competitiveData.my_position.position.replace('_', ' ')}
-                                    </p>
-                                  </div>
-                                  <div className="p-2 bg-neo-navy text-center">
-                                    <p className="text-neo-cream/60 text-[8px] uppercase">vs Market Avg</p>
-                                    <p className={`font-bold text-xs ${
-                                      competitiveData.my_position.price_vs_market_avg_percent <= 0 ? 'text-neo-teal' : 'text-neo-maroon'
-                                    }`}>
-                                      {competitiveData.my_position.price_vs_market_avg_percent > 0 ? '+' : ''}
-                                      {competitiveData.my_position.price_vs_market_avg_percent.toFixed(1)}%
-                                    </p>
-                                  </div>
-                                  <div className="p-2 bg-neo-navy text-center">
-                                    <p className="text-neo-cream/60 text-[8px] uppercase">Rank</p>
-                                    <p className="text-neo-cream font-bold text-xs">
-                                      {competitiveData.my_position.rank_estimate}
-                                    </p>
-                                  </div>
-                                  <div className="p-2 bg-neo-navy text-center">
-                                    <p className="text-neo-cream/60 text-[8px] uppercase">Competitors</p>
-                                    <p className="text-neo-cream font-bold text-xs">
-                                      {competitiveData.meta.competitor_count}
-                                    </p>
-                                  </div>
-                                </div>
-                              </NeoCard>
-
-                              {/* Market Summary */}
-                              <NeoCard className="p-3 sm:p-4 mb-3">
-                                <p className="text-sm sm:text-base font-bold text-neo-navy/60 uppercase mb-2">Market Prices</p>
-                                <div className="grid grid-cols-4 gap-2">
-                                  <div className="text-center">
-                                    <p className="text-[8px] text-neo-navy/50 uppercase">Min</p>
-                                    <p className="font-bold text-neo-teal text-sm">₹{competitiveData.market_summary.min_price}</p>
-                                  </div>
-                                  <div className="text-center">
-                                    <p className="text-[8px] text-neo-navy/50 uppercase">Avg</p>
-                                    <p className="font-bold text-neo-navy text-sm">₹{competitiveData.market_summary.avg_market_price.toFixed(0)}</p>
-                                  </div>
-                                  <div className="text-center">
-                                    <p className="text-[8px] text-neo-navy/50 uppercase">Median</p>
-                                    <p className="font-bold text-neo-navy text-sm">₹{competitiveData.market_summary.median_price}</p>
-                                  </div>
-                                  <div className="text-center">
-                                    <p className="text-[8px] text-neo-navy/50 uppercase">Max</p>
-                                    <p className="font-bold text-neo-maroon text-sm">₹{competitiveData.market_summary.max_price}</p>
-                                  </div>
-                                </div>
-                              </NeoCard>
-
-                              {/* Competitor Samples */}
-                              {competitiveData.competitor_sample?.length > 0 && (
-                                <NeoCard className="p-3 sm:p-4">
-                                  <p className="text-sm sm:text-base font-bold text-neo-navy/60 uppercase mb-2">Top Competitors</p>
-                                  <div className="space-y-2">
-                                    {competitiveData.competitor_sample.map((comp, i) => (
-                                      <div key={i} className="flex items-center justify-between p-2 border-[2px] border-neo-navy/10 hover:border-neo-navy/30 transition-all">
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-xs font-bold text-neo-navy truncate">{comp.title}</p>
-                                          <p className="text-[10px] text-neo-navy/50">
-                                            {comp.rating && `★ ${comp.rating}`}
-                                            {comp.review_count && ` (${comp.review_count} reviews)`}
-                                          </p>
-                                        </div>
-                                        <div className="text-right ml-2">
-                                          <p className="font-bold text-sm text-neo-navy">₹{comp.price}</p>
-                                          <p className={`text-[10px] font-bold ${
-                                            comp.price_vs_mine < 0 ? 'text-neo-teal' : comp.price_vs_mine > 0 ? 'text-neo-maroon' : 'text-neo-navy/50'
-                                          }`}>
-                                            {comp.price_vs_mine > 0 ? '+' : ''}{comp.price_vs_mine.toFixed(1)}%
-                                          </p>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </NeoCard>
-                              )}
-
-                              {/* ─── AI-Powered Deep Analysis ─────────────── */}
-                              {competitiveData.llm_analysis && (
-                                <div className="mt-4 space-y-3">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 bg-neo-orange flex items-center justify-center">
-                                      <Sparkles className="w-5 h-5 text-neo-navy" />
-                                    </div>
-                                    <div>
-                                      <p className="text-base sm:text-lg font-bold text-neo-navy">AI Deep Analysis</p>
-                                      <p className="text-[10px] text-neo-navy/50">Powered by Gemini</p>
-                                    </div>
-                                  </div>
-
-                                  {/* Executive Summary */}
-                                  {competitiveData.llm_analysis.executive_summary && (
-                                    <NeoCard className="p-3 sm:p-4 border-l-4 border-neo-orange">
-                                      <p className="text-[10px] sm:text-xs uppercase font-bold text-neo-navy/60 mb-1 flex items-center gap-1">
-                                        <FileText className="w-3 h-3" />
-                                        Executive Summary
-                                      </p>
-                                      <p className="text-xs sm:text-sm text-neo-navy leading-relaxed">
-                                        {competitiveData.llm_analysis.executive_summary}
-                                      </p>
-                                    </NeoCard>
-                                  )}
-
-                                  {/* Pricing Strategy + Recommended Price */}
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {competitiveData.llm_analysis.pricing_strategy && (
-                                      <NeoCard className="p-3 sm:p-4">
-                                        <p className="text-[10px] sm:text-xs uppercase font-bold text-neo-navy/60 mb-1 flex items-center gap-1">
-                                          <Target className="w-3 h-3" />
-                                          Pricing Strategy
-                                        </p>
-                                        <p className="text-xs sm:text-sm text-neo-navy">
-                                          {competitiveData.llm_analysis.pricing_strategy}
-                                        </p>
-                                      </NeoCard>
-                                    )}
-                                    {competitiveData.llm_analysis.recommended_price != null && (
-                                      <NeoCard className="p-3 sm:p-4 bg-neo-teal/10 border-[2px] border-neo-teal">
-                                        <p className="text-[10px] sm:text-xs uppercase font-bold text-neo-teal mb-1 flex items-center gap-1">
-                                          <IndianRupee className="w-3 h-3" />
-                                          AI Recommended Price
-                                        </p>
-                                        <p className="text-2xl sm:text-3xl font-black text-neo-teal">
-                                          ₹{Number(competitiveData.llm_analysis.recommended_price).toLocaleString()}
-                                        </p>
-                                        <p className="text-[10px] text-neo-navy/50 mt-1">
-                                          {(() => {
-                                            const diff = ((competitiveData.llm_analysis.recommended_price - competitiveData.my_position.price_difference - competitiveData.market_summary.avg_market_price) / (competitiveData.my_position.price_difference + competitiveData.market_summary.avg_market_price) * 100);
-                                            return !isNaN(diff) ? `Based on market data & AI analysis` : '';
-                                          })()}
-                                        </p>
-                                      </NeoCard>
-                                    )}
-                                  </div>
-
-                                  {/* SWOT Grid */}
-                                  {(competitiveData.llm_analysis.strengths?.length > 0 || competitiveData.llm_analysis.weaknesses?.length > 0 || competitiveData.llm_analysis.opportunities?.length > 0 || competitiveData.llm_analysis.threats?.length > 0) && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                      {/* Strengths */}
-                                      {competitiveData.llm_analysis.strengths?.length > 0 && (
-                                        <NeoCard className="p-3 border-l-4 border-neo-teal">
-                                          <p className="text-[10px] uppercase font-bold text-neo-teal mb-2 flex items-center gap-1">
-                                            <CheckCircle className="w-3 h-3" /> Strengths
-                                          </p>
-                                          <ul className="space-y-1">
-                                            {competitiveData.llm_analysis.strengths.map((s, i) => (
-                                              <li key={i} className="text-[11px] sm:text-xs text-neo-navy flex items-start gap-1.5">
-                                                <span className="text-neo-teal mt-0.5">▸</span> {s}
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        </NeoCard>
-                                      )}
-                                      {/* Weaknesses */}
-                                      {competitiveData.llm_analysis.weaknesses?.length > 0 && (
-                                        <NeoCard className="p-3 border-l-4 border-neo-maroon">
-                                          <p className="text-[10px] uppercase font-bold text-neo-maroon mb-2 flex items-center gap-1">
-                                            <XCircle className="w-3 h-3" /> Weaknesses
-                                          </p>
-                                          <ul className="space-y-1">
-                                            {competitiveData.llm_analysis.weaknesses.map((w, i) => (
-                                              <li key={i} className="text-[11px] sm:text-xs text-neo-navy flex items-start gap-1.5">
-                                                <span className="text-neo-maroon mt-0.5">▸</span> {w}
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        </NeoCard>
-                                      )}
-                                      {/* Opportunities */}
-                                      {competitiveData.llm_analysis.opportunities?.length > 0 && (
-                                        <NeoCard className="p-3 border-l-4 border-neo-orange">
-                                          <p className="text-[10px] uppercase font-bold text-neo-orange mb-2 flex items-center gap-1">
-                                            <Lightbulb className="w-3 h-3" /> Opportunities
-                                          </p>
-                                          <ul className="space-y-1">
-                                            {competitiveData.llm_analysis.opportunities.map((o, i) => (
-                                              <li key={i} className="text-[11px] sm:text-xs text-neo-navy flex items-start gap-1.5">
-                                                <span className="text-neo-orange mt-0.5">▸</span> {o}
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        </NeoCard>
-                                      )}
-                                      {/* Threats */}
-                                      {competitiveData.llm_analysis.threats?.length > 0 && (
-                                        <NeoCard className="p-3 border-l-4 border-neo-navy">
-                                          <p className="text-[10px] uppercase font-bold text-neo-navy mb-2 flex items-center gap-1">
-                                            <Shield className="w-3 h-3" /> Threats
-                                          </p>
-                                          <ul className="space-y-1">
-                                            {competitiveData.llm_analysis.threats.map((th, i) => (
-                                              <li key={i} className="text-[11px] sm:text-xs text-neo-navy flex items-start gap-1.5">
-                                                <span className="text-neo-navy mt-0.5">▸</span> {th}
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        </NeoCard>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {/* Action Items */}
-                                  {competitiveData.llm_analysis.action_items?.length > 0 && (
-                                    <NeoCard className="p-3 sm:p-4 bg-neo-navy">
-                                      <p className="text-[10px] sm:text-xs uppercase font-bold text-neo-orange mb-2 flex items-center gap-1">
-                                        <Zap className="w-3 h-3" /> Action Items
-                                      </p>
-                                      <ol className="space-y-1.5">
-                                        {competitiveData.llm_analysis.action_items.map((a, i) => (
-                                          <li key={i} className="text-[11px] sm:text-xs text-neo-cream flex items-start gap-2">
-                                            <span className="bg-neo-orange text-neo-navy font-black text-[10px] w-5 h-5 flex items-center justify-center flex-shrink-0">
-                                              {i + 1}
-                                            </span>
-                                            {a}
-                                          </li>
-                                        ))}
-                                      </ol>
-                                    </NeoCard>
-                                  )}
-
-                                  {/* Market Analysis Paragraph */}
-                                  {competitiveData.llm_analysis.market_analysis && (
-                                    <NeoCard className="p-3 sm:p-4">
-                                      <p className="text-[10px] sm:text-xs uppercase font-bold text-neo-navy/60 mb-1 flex items-center gap-1">
-                                        <Brain className="w-3 h-3" />
-                                        Detailed Market Analysis
-                                      </p>
-                                      <p className="text-xs sm:text-sm text-neo-navy/80 leading-relaxed whitespace-pre-line">
-                                        {competitiveData.llm_analysis.market_analysis}
-                                      </p>
-                                    </NeoCard>
-                                  )}
-
-                                  {/* Data Sources Footer */}
-                                  <div className="flex items-center gap-2 text-[10px] text-neo-navy/40">
-                                    <Info className="w-3 h-3" />
-                                    <span>
-                                      Sources: {competitiveData.meta?.sources_used?.join(', ') || 'N/A'}
-                                      {' · '}
-                                      {competitiveData.meta?.competitor_count || 0} competitors analyzed
-                                      {competitiveData.meta?.llm_analysis_available && ' · AI analysis included'}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Fallback if no LLM analysis */}
-                              {!competitiveData.llm_analysis && competitiveData.meta && (
-                                <div className="mt-3 p-3 bg-neo-navy/5 border-[2px] border-dashed border-neo-navy/20">
-                                  <p className="text-[10px] sm:text-xs text-neo-navy/50 flex items-center gap-1">
-                                    <Info className="w-3 h-3" />
-                                    AI deep analysis was not available for this query. Rule-based insights are shown in the Insights tab.
-                                  </p>
-                                </div>
-                              )}
+                              {renderCompetitiveUI()}
                             </div>
                           )}
                         </div>
-                      )}
+                      ) : (
+                        <div className="py-12 text-center border-[2px] border-dashed border-neo-navy/30">
+                          <BarChart3 className="w-10 h-10 mx-auto mb-2 text-neo-navy/40" />
+                          <p className="font-bold text-sm text-neo-navy">Financial Charts Not Calculated Yet</p>
+                          <p className="text-xs text-neo-navy/60 mt-1 mb-4">Calculate analytics to visualize revenue breakdown and sales funnel</p>
+                          <NeoButton onClick={handleCalculate} variant="teal" className="!py-2 !px-5 !text-xs font-bold">
+                            <Calculator className="w-4 h-4 mr-1.5" />
+                            Calculate Analytics
+                          </NeoButton>
+                        </div>
+                      )
+                    )}
+
+                    {/* ─── COMPETITIVE INTELLIGENCE TAB ───────────── */}
+                    {activeTab === 'competitive' && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-8 h-8 bg-neo-orange flex items-center justify-center">
+                            <Brain className="w-5 h-5 text-neo-navy" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-neo-navy text-base">AI Competitive Intelligence</p>
+                            <p className="text-[10px] text-neo-navy/50">Market benchmarking, live price spread & strategic recommendations</p>
+                          </div>
+                        </div>
+
+                        {competitiveData ? (
+                          renderCompetitiveUI()
+                        ) : (
+                          <div className="py-12 text-center border-[2px] border-dashed border-neo-navy/30">
+                            <Brain className="w-10 h-10 mx-auto mb-2 text-neo-orange opacity-70" />
+                            <p className="font-bold text-sm text-neo-navy">AI Competitive Intelligence Not Run Yet</p>
+                            <p className="text-xs text-neo-navy/60 mt-1 mb-4">
+                              Scrape live competitor listings from Amazon/Flipkart & generate positioning analysis
+                            </p>
+                            <NeoButton
+                              onClick={handleCompetitiveAnalysis}
+                              variant="orange"
+                              className="!py-2 !px-5 !text-xs font-bold"
+                              disabled={compLoading || !product.product_name || !product.selling_price}
+                            >
+                              <Brain className="w-4 h-4 mr-1.5" />
+                              Run AI Competitive Analysis Now
+                            </NeoButton>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                       {/* ─── INSIGHTS TAB ───────────────────────────── */}
                       {activeTab === 'insights' && (
